@@ -1,0 +1,13 @@
+Flask==3.0.0
+Flask-Cors==4.0.0
+Flask-RESTful==0.3.10
+Flask-SQLAlchemy==3.1.1
+gunicorn==21.2.0
+Jinja2==3.1.4
+mediapipe==0.10.15
+numpy==1.26.4
+opencv-contrib-python==4.10.0.84
+opencv-contrib-python-headless==4.10.0.84
+opencv-python==4.10.0.84
+requests==2.32.3
+scipy==1.14.0
