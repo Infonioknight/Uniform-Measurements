@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pose Detection with MediaPipe</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body id="body">
+    <div class="container">
+        <h1>Pose Detection - Landmark Visibility</h1>
+
+        <div class="video-container">
+            <img src="{{ url_for('video_feed') }}" width="640" height="480" alt="Pose Detection Video Feed">
+        </div>
+    </div>
+
+    <script>
+        function updateBackgroundColor() {
+            fetch('/get_background_color')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('body').style.backgroundColor = data.background_color;
+            });
+        }
+
+        setInterval(updateBackgroundColor, 1000);
+    </script>
+</body>
+</html>
