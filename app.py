@@ -25,18 +25,14 @@ LANDMARKS_TO_TRACK = {
 }
 
 VISIBILITY_THRESHOLD = 0.9
-
 background_color = '#f58484'  
 all_visible_once_logged = False
-
 CSV_FILE = 'landmark_distances.csv'
 
 def calculate_distance(p1, p2):
-    """Calculate Euclidean distance between two points in pixels"""
     return math.sqrt((p2[0] - p1[0]) ** 2 + (p2[1] - p1[1]) ** 2)
 
 def log_to_csv(data):
-    """Log data to a CSV file"""
     file_exists = os.path.isfile(CSV_FILE)
     with open(CSV_FILE, mode='a', newline='') as file:
         writer = csv.writer(file)
@@ -59,8 +55,8 @@ def check_landmarks_visibility(landmarks):
         if visibility < VISIBILITY_THRESHOLD:
             all_visible = False
         
-        x = int(landmark.x * 640)  
-        y = int(landmark.y * 480)  
+        x = int(landmark.x * 640)
+        y = int(landmark.y * 480)
         landmark_coords[part] = (x, y)
 
     if all_visible:
@@ -71,14 +67,12 @@ def check_landmarks_visibility(landmarks):
             leg_height = round((calculate_distance(landmark_coords['Right Hip'], landmark_coords['Right Foot']) * 1.47) * 0.123, 2)
             thigh_radius = round((calculate_distance(landmark_coords['Right Hip'], landmark_coords['Left Hip']) * 2.5) * 0.123, 2)
             
-            # Log to CSV
             log_to_csv([shoulder_distance, hip_distance, torso_height, leg_height, thigh_radius])
-            
             print("All parts are visible. Landmark distances logged to CSV.")
             all_visible_once_logged = True
-        background_color = '#00ff00'  
+        background_color = '#00ff00'
     else:
-        background_color = '#f58484'  
+        background_color = '#f58484'
         all_visible_once_logged = False  
 
     return all_visible
@@ -86,9 +80,13 @@ def check_landmarks_visibility(landmarks):
 def generate_frames():
     global background_color
 
-    cap = cv2.VideoCapture(0)  
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640) 
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)  
+    cap = cv2.VideoCapture(0)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+
+    if not cap.isOpened():
+        print("Error: Camera not accessible.")
+        return
 
     while True:
         success, frame = cap.read()
@@ -100,7 +98,6 @@ def generate_frames():
 
         if results.pose_landmarks:
             mp_drawing.draw_landmarks(frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
-
             check_landmarks_visibility(results.pose_landmarks.landmark)
 
         ret, buffer = cv2.imencode('.jpg', frame)
@@ -122,4 +119,4 @@ def get_background_color():
     return jsonify({"background_color": background_color})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, threaded=True)
