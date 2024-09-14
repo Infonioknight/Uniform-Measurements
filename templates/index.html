@@ -9,11 +9,21 @@
         <h1>Pose Detection - Landmark Visibility</h1>
 
         <div class="video-container">
-            <img src="{{ url_for('video_feed') }}" width="640" height="480" alt="Pose Detection Video Feed">
+            <video id="video" width="640" height="480" autoplay></video>
         </div>
     </div>
 
     <script>
+        async function startWebcam() {
+            const video = document.getElementById('video');
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+            } catch (err) {
+                console.error('Error accessing webcam: ', err);
+            }
+        }
+
         function updateBackgroundColor() {
             fetch('/get_background_color')
             .then(response => response.json())
@@ -22,7 +32,11 @@
             });
         }
 
-        setInterval(updateBackgroundColor, 3000);
+        // Start webcam on page load
+        window.onload = () => {
+            startWebcam();
+            setInterval(updateBackgroundColor, 3000);
+        };
     </script>
 </body>
 </html>
