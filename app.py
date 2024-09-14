@@ -5,6 +5,7 @@ import math
 import csv
 import os
 import numpy as np
+import base64
 
 app = Flask(__name__)
 
@@ -92,6 +93,12 @@ def process_frame():
     file = request.files['frame']
     img = np.frombuffer(file.read(), np.uint8)
     frame = cv2.imdecode(img, cv2.IMREAD_COLOR)
+    
+    if frame is None:
+        return jsonify({
+            'error': 'Failed to decode image',
+            'background_color': background_color
+        })
 
     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     results = pose.process(rgb_frame)
@@ -99,7 +106,7 @@ def process_frame():
     if results.pose_landmarks:
         mp_drawing.draw_landmarks(frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
         check_landmarks_visibility(results.pose_landmarks.landmark)
-
+    
     ret, buffer = cv2.imencode('.jpg', frame)
     frame = buffer.tobytes()
 

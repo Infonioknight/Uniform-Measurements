@@ -15,45 +15,49 @@
     </div>
 
     <script>
-        const video = document.getElementById('video');
-        const processedFrame = document.getElementById('processed_frame');
-
-        // Get user media
-        navigator.mediaDevices.getUserMedia({ video: true })
-        .then(stream => {
-            video.srcObject = stream;
-        })
-        .catch(err => {
-            console.error('Error accessing webcam:', err);
-        });
-
-        function sendFrame() {
+        // Access the webcam and send frames to the backend
+        async function sendFrameToBackend(frame) {
+            const response = await fetch('/process_frame', {
+                method: 'POST',
+                body: frame
+            });
+            const data = await response.json();
+            document.getElementById('video-feed').src = data.image;
+            document.getElementById('body').style.backgroundColor = data.background_color;
+            console.log("Landmarks visible: ", data.landmarks_visible);
+        }
+    
+        async function captureAndSend() {
+            const video = document.createElement('video');
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-            canvas.toBlob(blob => {
-                const formData = new FormData();
-                formData.append('frame', blob, 'frame.jpg');
-
-                fetch('/process_frame', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('body').style.backgroundColor = data.background_color;
-                    processedFrame.src = data.image;
-
-                    // Log landmark visibility
-                    console.log('Landmarks Visible:', data.landmarks_visible);
-                });
-            }, 'image/jpeg');
+            
+            video.autoplay = true;
+            video.srcObject = await navigator.mediaDevices.getUserMedia({ video: true });
+            document.body.appendChild(video);
+    
+            video.addEventListener('canplay', function() {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                canvas.toBlob(async function(blob) {
+                    const frame = new FormData();
+                    frame.append('frame', blob, 'frame.jpg');
+                    await sendFrameToBackend(frame);
+                }, 'image/jpeg');
+            });
+    
+            setInterval(() => {
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                canvas.toBlob(async function(blob) {
+                    const frame = new FormData();
+                    frame.append('frame', blob, 'frame.jpg');
+                    await sendFrameToBackend(frame);
+                }, 'image/jpeg');
+            }, 1000); // Send frame every second
         }
-
-        // Send frame to the server every 500ms
-        setInterval(sendFrame, 500);
-    </script>
+    
+        captureAndSend();
+    </script>    
 </body>
 </html>
