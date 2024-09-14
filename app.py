@@ -1,9 +1,10 @@
-from flask import Flask, Response, render_template, jsonify
+from flask import Flask, Response, render_template, jsonify, request
 import cv2
 import mediapipe as mp
 import math
 import csv
 import os
+import numpy as np
 
 app = Flask(__name__)
 
@@ -77,48 +78,35 @@ def check_landmarks_visibility(landmarks):
 
     return all_visible
 
-def generate_frames():
-    global background_color
-
-    cap = cv2.VideoCapture(0)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-
-    if not cap.isOpened():
-        print("Error: Camera not accessible.")
-        return
-
-    while True:
-        success, frame = cap.read()
-        if not success:
-            break
-
-        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        results = pose.process(rgb_frame)
-
-        if results.pose_landmarks:
-            mp_drawing.draw_landmarks(frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
-            check_landmarks_visibility(results.pose_landmarks.landmark)
-
-        ret, buffer = cv2.imencode('.jpg', frame)
-        frame = buffer.tobytes()
-
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-
 @app.route('/')
 def index():
     return render_template('index.html')
 
-@app.route('/video_feed')
-def video_feed():
-    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+@app.route('/get_background_color')
+def get_background_color():
+    return jsonify({"background_color": background_color})
 
-@app.route('/get_landmark_data')
-def get_landmark_data():
+@app.route('/process_frame', methods=['POST'])
+def process_frame():
+    global background_color
+    file = request.files['frame']
+    img = np.frombuffer(file.read(), np.uint8)
+    frame = cv2.imdecode(img, cv2.IMREAD_COLOR)
+
+    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    results = pose.process(rgb_frame)
+
+    if results.pose_landmarks:
+        mp_drawing.draw_landmarks(frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
+        check_landmarks_visibility(results.pose_landmarks.landmark)
+
+    ret, buffer = cv2.imencode('.jpg', frame)
+    frame = buffer.tobytes()
+
     return jsonify({
-        "landmarks_visible": all_visible_once_logged,
-        "background_color": background_color
+        'image': 'data:image/jpeg;base64,' + base64.b64encode(frame).decode('utf-8'),
+        'background_color': background_color,
+        'landmarks_visible': all_visible_once_logged
     })
 
 if __name__ == '__main__':

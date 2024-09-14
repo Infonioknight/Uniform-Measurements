@@ -9,21 +9,51 @@
         <h1>Pose Detection - Landmark Visibility</h1>
 
         <div class="video-container">
-            <img src="{{ url_for('video_feed') }}" width="640" height="480" alt="Pose Detection Video Feed">
+            <video id="video" width="640" height="480" autoplay></video>
+            <img id="processed_frame" width="640" height="480" alt="Processed Frame">
         </div>
     </div>
 
     <script>
-        function updateBackgroundColorAndLogData() {
-            fetch('/get_landmark_data')
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('body').style.backgroundColor = data.background_color;
-                console.log('Landmarks Visible:', data.landmarks_visible);
-            });
+        const video = document.getElementById('video');
+        const processedFrame = document.getElementById('processed_frame');
+
+        // Get user media
+        navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+            video.srcObject = stream;
+        })
+        .catch(err => {
+            console.error('Error accessing webcam:', err);
+        });
+
+        function sendFrame() {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob(blob => {
+                const formData = new FormData();
+                formData.append('frame', blob, 'frame.jpg');
+
+                fetch('/process_frame', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('body').style.backgroundColor = data.background_color;
+                    processedFrame.src = data.image;
+
+                    // Log landmark visibility
+                    console.log('Landmarks Visible:', data.landmarks_visible);
+                });
+            }, 'image/jpeg');
         }
 
-        setInterval(updateBackgroundColorAndLogData, 3000);
+        // Send frame to the server every 500ms
+        setInterval(sendFrame, 500);
     </script>
 </body>
 </html>
