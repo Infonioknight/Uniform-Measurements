@@ -9,55 +9,20 @@
         <h1>Pose Detection - Landmark Visibility</h1>
 
         <div class="video-container">
-            <video id="video" width="640" height="480" autoplay></video>
-            <img id="processed_frame" width="640" height="480" alt="Processed Frame">
+            <img src="{{ url_for('video_feed') }}" width="640" height="480" alt="Pose Detection Video Feed">
         </div>
     </div>
 
     <script>
-        // Access the webcam and send frames to the backend
-        async function sendFrameToBackend(frame) {
-            const response = await fetch('/process_frame', {
-                method: 'POST',
-                body: frame
+        function updateBackgroundColor() {
+            fetch('/get_background_color')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('body').style.backgroundColor = data.background_color;
             });
-            const data = await response.json();
-            document.getElementById('video-feed').src = data.image;
-            document.getElementById('body').style.backgroundColor = data.background_color;
-            console.log("Landmarks visible: ", data.landmarks_visible);
         }
-    
-        async function captureAndSend() {
-            const video = document.createElement('video');
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-            
-            video.autoplay = true;
-            video.srcObject = await navigator.mediaDevices.getUserMedia({ video: true });
-            document.body.appendChild(video);
-    
-            video.addEventListener('canplay', function() {
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                canvas.toBlob(async function(blob) {
-                    const frame = new FormData();
-                    frame.append('frame', blob, 'frame.jpg');
-                    await sendFrameToBackend(frame);
-                }, 'image/jpeg');
-            });
-    
-            setInterval(() => {
-                context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                canvas.toBlob(async function(blob) {
-                    const frame = new FormData();
-                    frame.append('frame', blob, 'frame.jpg');
-                    await sendFrameToBackend(frame);
-                }, 'image/jpeg');
-            }, 1000); // Send frame every second
-        }
-    
-        captureAndSend();
-    </script>    
+
+        setInterval(updateBackgroundColor, 3000);
+    </script>
 </body>
 </html>
