@@ -1,9 +1,10 @@
-from flask import Flask, Response, render_template, jsonify
+from flask import Flask, Response, render_template, jsonify, request
 import cv2
 import mediapipe as mp
 import math
 import csv
 import os
+import numpy as np
 
 app = Flask(__name__)
 
@@ -24,10 +25,14 @@ LANDMARKS_TO_TRACK = {
     'Left Elbow': 14
 }
 
-VISIBILITY_THRESHOLD = 0.9
-background_color = '#f58484'  
+VISIBILITY_THRESHOLD = 0.7
+background_color = '#f58484'
 all_visible_once_logged = False
 CSV_FILE = 'landmark_distances.csv'
+
+SAVE_DIR = './saved_images'
+if not os.path.exists(SAVE_DIR):
+    os.makedirs(SAVE_DIR)
 
 def calculate_distance(p1, p2):
     return math.sqrt((p2[0] - p1[0]) ** 2 + (p2[1] - p1[1]) ** 2)
@@ -50,13 +55,13 @@ def check_landmarks_visibility(landmarks):
     for part, index in LANDMARKS_TO_TRACK.items():
         landmark = landmarks[index]
         visibility = landmark.visibility
-        visibility_data[part] = visibility
-        
+ 
         if visibility < VISIBILITY_THRESHOLD:
             all_visible = False
         
-        x = int(landmark.x * 640)
-        y = int(landmark.y * 480)
+        visibility_data[part] = visibility
+        x = int(landmark.x * 640)  
+        y = int(landmark.y * 480)  
         landmark_coords[part] = (x, y)
 
     if all_visible:
@@ -71,11 +76,48 @@ def check_landmarks_visibility(landmarks):
             print("All parts are visible. Landmark distances logged to CSV.")
             all_visible_once_logged = True
         background_color = '#00ff00'
+        print("All landmarks are visible on the screen.")
     else:
         background_color = '#f58484'
-        all_visible_once_logged = False  
+        all_visible_once_logged = False
+  
+        print("Not all landmarks are visible.")
+        for part, index in LANDMARKS_TO_TRACK.items():
+            visibility = visibility_data.get(part, 0)
+            if visibility < VISIBILITY_THRESHOLD:
+                print(f"{part} visibility: {visibility}")
 
     return all_visible
+
+def draw_landmarks(image):
+    rgb_img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    results = pose.process(rgb_img)
+    
+    if results.pose_landmarks:
+        mp_drawing.draw_landmarks(image, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
+    return image
+
+def save_image(image_bytes, count):
+    np_img = np.frombuffer(image_bytes, np.uint8)
+    img = cv2.imdecode(np_img, cv2.IMREAD_COLOR)
+    
+    if img is not None:
+        img_with_landmarks = draw_landmarks(img)
+        
+        file_path = os.path.join(SAVE_DIR, f'image_with_landmarks_{count}.jpg')
+        cv2.imwrite(file_path, img_with_landmarks)
+        print(f"Image with landmarks saved to {file_path}")
+    else:
+        print("Error: Could not decode image.")
+
+def process_image_from_bytes(image_bytes):
+    np_img = np.frombuffer(image_bytes, np.uint8)
+    img = cv2.imdecode(np_img, cv2.IMREAD_COLOR)
+    rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    results = pose.process(rgb_img)
+    if results.pose_landmarks:
+        check_landmarks_visibility(results.pose_landmarks.landmark)
+    return results
 
 def generate_frames():
     global background_color
@@ -117,6 +159,26 @@ def video_feed():
 @app.route('/get_background_color')
 def get_background_color():
     return jsonify({"background_color": background_color})
+
+@app.route('/process_frame', methods=['POST'])
+def process_frame():
+    try:
+        if 'frame' not in request.files:
+            return jsonify({"success": False, "error": "No frame provided"}), 400
+        
+        frame_file = request.files['frame']
+        image_bytes = frame_file.read()
+        
+        save_image(image_bytes, 1)
+        save_image(image_bytes, 2)
+        
+        process_image_from_bytes(image_bytes)
+        
+        return jsonify({"success": True, "background_color": background_color, "message": "Frame processed successfully"})
+    
+    except Exception as e:
+        print(f"Error processing frame: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, threaded=True)
