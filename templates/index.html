@@ -17,6 +17,7 @@
         const video = document.getElementById('video');
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
+        const backendURL = 'https://uniform-1060926045936.asia-southeast1.run.app'; 
 
         navigator.mediaDevices.getUserMedia({
             video: true
@@ -24,6 +25,7 @@
             video.srcObject = stream;
         }).catch(err => {
             console.error('Error accessing webcam: ', err);
+            alert('Could not access the webcam. Please allow access.');
         });
 
         video.addEventListener('canplay', () => {
@@ -41,7 +43,7 @@
                         const formData = new FormData();
                         formData.append('frame', blob, 'frame.jpg'); 
 
-                        fetch('/process_frame', {
+                        fetch(`${backendURL}/process_frame`, {
                             method: 'POST',
                             body: formData
                         })
