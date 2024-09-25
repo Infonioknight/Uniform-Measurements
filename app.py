@@ -44,13 +44,13 @@ def calculate_distance(p1, p2):
 def log_to_google_sheets(data):
     try:
         sheet_values = sheet.get_all_values()
-        
+
         if len(sheet_values) == 0: 
             sheet.append_row(["Measurements in Inches (in)"])
             sheet.append_row(["Shoulder circumference", "Waist", "Torso height", "Leg height", "Thigh radius"])
 
         sheet.append_row(data)
-    
+
     except Exception as e:
         print(f"Error logging data to Google Sheet: {e}")
 
@@ -89,8 +89,6 @@ def check_landmarks_visibility(landmarks):
                 all_visible_once_logged = True 
                 log_to_google_sheets([shoulder_distance, hip_distance, torso_height, leg_height, thigh_radius])
             background_color = '#00ff00'
-        else:
-            print(f"Waiting for consistent visibility: {visible_counter}/5 frames")
     else:
         visible_counter = 0
         background_color = '#f58484'
@@ -147,14 +145,6 @@ def generate_frames():
 @app.route('/')
 def index():
     return render_template('index.html')
-
-@app.route('/video_feed')
-def video_feed():
-    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
-
-@app.route('/get_background_color')
-def get_background_color():
-    return jsonify({"background_color": background_color})
 
 @app.route('/process_frame', methods=['POST'])
 def process_frame():
