@@ -1,4 +1,4 @@
-from flask import Flask, Response, render_template, jsonify, request
+from flask import Flask, Response, render_template, jsonify, request, session
 import cv2
 import mediapipe as mp
 import math
@@ -9,6 +9,7 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
 app = Flask(__name__)
+app.secret_key = os.urandom(24)
 CORS(app)
 
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
@@ -84,11 +85,11 @@ def check_landmarks_visibility(landmarks):
                 torso_height = round((calculate_distance(landmark_coords['Right Shoulder'], landmark_coords['Right Hip'])) * 0.123, 2)
                 leg_height = round((calculate_distance(landmark_coords['Right Hip'], landmark_coords['Right Foot']) * 1.47) * 0.123, 2)
                 thigh_radius = round((calculate_distance(landmark_coords['Right Hip'], landmark_coords['Left Hip']) * 2.5) * 0.123, 2)
-                
-                print(visible_counter)
+
                 all_visible_once_logged = True 
                 log_to_google_sheets([shoulder_distance, hip_distance, torso_height, leg_height, thigh_radius])
             background_color = '#00ff00'
+
     else:
         visible_counter = 0
         background_color = '#f58484'
@@ -143,6 +144,43 @@ def generate_frames():
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
 @app.route('/')
+def landing():
+    return render_template('landing.html')
+
+@app.route('/previous_calibration')
+def previous_calibration():
+    return render_template('previous_calibration.html')
+
+@app.route('/submit_measurements', methods=['POST'])
+def submit_measurements():
+    try:
+        shoulder_width = request.form.get('shoulder_width')  # Get shoulder width from the form
+        if shoulder_width:
+            session['shoulder_width'] = shoulder_width  # Store the measurement in the session
+            print(f"Shoulder width submitted and stored in session: {session['shoulder_width']}")  # Print to console
+            return jsonify({"success": True, "message": "Measurement stored successfully!"})
+        else:
+            return jsonify({"success": False, "error": "No measurement provided"}), 400
+            
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/existing_value', methods=['POST'])
+def existing_value():
+    try:
+        shoulder_width = request.form.get('shoulder_width')  # Get shoulder width from the request
+        if shoulder_width:
+            session['shoulder_width'] = shoulder_width  # Store the measurement in the session
+            print(f"Existing shoulder width retrieved and stored in session: {session['shoulder_width']}")  # Print to console
+            return jsonify({"success": True, "message": "Existing measurement stored successfully!"})
+        else:
+            return jsonify({"success": False, "error": "No existing measurement provided"}), 400
+            
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route('/video_feed')
 def index():
     return render_template('index.html')
 

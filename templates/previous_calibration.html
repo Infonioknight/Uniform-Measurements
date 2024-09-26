@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Previous Calibration Exists</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/previousCalibrationStyles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Previous Calibration Exists</h1>
+        <p>There is already a calibration value stored. What would you like to do?</p>
+        <button class="action-button" onclick="continueWithExisting()">Continue</button>
+        <button class="action-button" onclick="recalibrate()">Re-calibrate</button>
+    </div>
+
+    <script src="{{url_for('static', filename='js/previousCalibrationScript.js')}}"></script>
+</body>
+</html>
