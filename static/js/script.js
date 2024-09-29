@@ -1,7 +1,39 @@
 const video = document.getElementById('video');
 const canvas = document.createElement('canvas');
 const context = canvas.getContext('2d');
-// const backendURL = 'https://uniform-1060926045936.asia-southeast1.run.app'; 
+
+const circleCanvas = document.createElement('canvas');
+const circleContext = circleCanvas.getContext('2d');
+
+circleCanvas.width = 640;
+circleCanvas.height = 480;
+
+function drawCircles() {
+    circleContext.clearRect(0, 0, circleCanvas.width, circleCanvas.height);
+    circleContext.globalAlpha = 0.5;
+    circleContext.fillStyle = 'rgba(255, 255, 255, 1)';
+
+    const circleRadius = 20;
+    const circleSpacing = 50;
+
+    circleContext.beginPath();
+    circleContext.arc(circleCanvas.width / 2, circleCanvas.height / 2, circleRadius, 0, 2 * Math.PI);
+    circleContext.fill();
+
+    circleContext.beginPath();
+    circleContext.arc(circleCanvas.width / 2 - circleSpacing, circleCanvas.height / 2, circleRadius, 0, 2 * Math.PI);
+    circleContext.fill();
+
+    circleContext.beginPath();
+    circleContext.arc(circleCanvas.width / 2 + circleSpacing, circleCanvas.height / 2, circleRadius, 0, 2 * Math.PI);
+    circleContext.fill();
+
+    circleContext.beginPath();
+    circleContext.arc(circleCanvas.width / 2, circleCanvas.height / 2 - circleSpacing, circleRadius, 0, 2 * Math.PI);
+    circleContext.fill();
+
+    circleContext.globalAlpha = 1.0;
+}
 
 navigator.mediaDevices.getUserMedia({
     video: true
@@ -15,19 +47,24 @@ navigator.mediaDevices.getUserMedia({
 video.addEventListener('canplay', () => {
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    console.log("Video is ready and canvas dimensions set.");
+
+    video.parentNode.insertBefore(canvas, video);
+    video.style.display = 'none';
+
+    drawCircles();
 });
 
 function captureAndSendFrame() {
     if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        context.clearRect(0, 0, canvas.width, canvas.height);
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        context.drawImage(circleCanvas, 0, 0);
 
         canvas.toBlob(function(blob) {
             if (blob) {
                 const formData = new FormData();
-                formData.append('frame', blob, 'frame.jpg'); 
+                formData.append('frame', blob, 'frame.jpg');
 
-                // fetch(`${backendURL}/process_frame`, {
                 fetch(`/process_frame`, {
                     method: 'POST',
                     body: formData

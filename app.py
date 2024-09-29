@@ -7,6 +7,7 @@ import numpy as np
 from flask_cors import CORS
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+import time
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -62,8 +63,7 @@ def log_to_google_sheets(data):
 
 def check_landmarks_visibility(landmarks, mode):
     global all_visible_once_logged, background_color, visible_counter
-    
-    # visibility_data = {}
+   
     all_visible = True
     
     landmark_coords = {}
@@ -73,17 +73,16 @@ def check_landmarks_visibility(landmarks, mode):
 
         if visibility < VISIBILITY_THRESHOLD:
             all_visible = False
-        
-        # visibility_data[part] = visibility
+    
         x = int(landmark.x * 640)
         y = int(landmark.y * 480)
         landmark_coords[part] = (x, y)
 
     if all_visible:
-        if visible_counter < 5:
+        if visible_counter < 10:
             visible_counter += 1
         
-        if visible_counter == 5:
+        if visible_counter == 10:
             if mode == 1:  
                 if not all_visible_once_logged:
                     shoulder_distance = round((calculate_distance(landmark_coords['Right Shoulder'], landmark_coords['Left Shoulder']) * 1.54) * 0.123, 2)
@@ -110,14 +109,6 @@ def check_landmarks_visibility(landmarks, mode):
 
     return all_visible
 
-def draw_landmarks(image):
-    rgb_img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    results = pose.process(rgb_img)
-    
-    if results.pose_landmarks:
-        mp_drawing.draw_landmarks(image, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
-    return image
-
 def process_image_from_bytes(image_bytes, mode):
     np_img = np.frombuffer(image_bytes, np.uint8)
     img = cv2.imdecode(np_img, cv2.IMREAD_COLOR)
@@ -126,35 +117,6 @@ def process_image_from_bytes(image_bytes, mode):
     if results.pose_landmarks:
         check_landmarks_visibility(results.pose_landmarks.landmark, mode)
     return results
-
-def generate_frames():
-    global background_color
-
-    cap = cv2.VideoCapture(0)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-
-    if not cap.isOpened():
-        print("Error: Camera not accessible.")
-        return
-
-    while True:
-        success, frame = cap.read()
-        if not success:
-            break
-
-        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        results = pose.process(rgb_frame)
-
-        if results.pose_landmarks:
-            mp_drawing.draw_landmarks(frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
-            check_landmarks_visibility(results.pose_landmarks.landmark)
-
-        ret, buffer = cv2.imencode('.jpg', frame)
-        frame = buffer.tobytes()
-
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
 @app.route('/')
 def landing():
@@ -181,10 +143,10 @@ def submit_measurements():
 @app.route('/existing_value', methods=['POST'])
 def existing_value():
     try:
-        shoulder_width = request.form.get('shoulder_width')  # Get shoulder width from the request
+        shoulder_width = request.form.get('shoulder_width') 
         if shoulder_width:
-            session['shoulder_width'] = shoulder_width  # Store the measurement in the session
-            print(f"Existing shoulder width retrieved and stored in session: {session['shoulder_width']}")  # Print to console
+            session['shoulder_width'] = shoulder_width  
+            print(f"Existing shoulder width retrieved and stored in session: {session['shoulder_width']}") 
             return jsonify({"success": True, "message": "Existing measurement stored successfully!"})
         else:
             return jsonify({"success": False, "error": "No existing measurement provided"}), 400
@@ -210,11 +172,22 @@ def calculation():
         image_bytes = frame_file.read()
         
         process_image_from_bytes(image_bytes, 0)
-        
+
         return jsonify({"success": True, "background_color": background_color, "message": "Frame processed successfully"})
     
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/re_calibrate', methods=['POST'])
+def re_calibrate():
+    global background_color, visible_counter, all_visible_once_logged, pose
+
+    background_color = '#f58484'
+    visible_counter = 0 
+    all_visible_once_logged = False  
+
+    return jsonify({"success": True, "message": "Calibration reset and background color updated"}), 200
+
 
 @app.route('/process_frame', methods=['POST'])
 def process_frame():
