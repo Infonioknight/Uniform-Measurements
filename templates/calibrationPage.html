@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Uniform Measurement</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body id="body">
+    <div class="container">
+        <h1>Uniform Measurement - Calibration Page</h1>
+        <p class="instructions">This is a page for calibrating body measurements for future use, to ensure accuracy - 
+            <br><br>
+            Please position the camera accordingly, ensure <strong>SHOULDERS</strong>, <strong>HIP</strong>, <strong>ELBOWS</strong>, <strong>HANDS</strong>, AND <strong>FEET</strong> are visible in the camera frame.
+        </p>
+        <div class="video-container">
+            <video id="video" width="640" height="480" autoplay></video>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='js/calibrationScript.js') }}"></script>
+</body>
+</html>

@@ -34,6 +34,11 @@ LANDMARKS_TO_TRACK = {
     'Left Elbow': 14
 }
 
+LANDMARKS_TO_CALIBRATE = {
+    'Right Shoulder': 11,
+    'Left Shoulder': 12,
+}
+
 VISIBILITY_THRESHOLD = 0.9
 visible_counter = 0
 background_color = '#f58484'
@@ -55,10 +60,10 @@ def log_to_google_sheets(data):
     except Exception as e:
         print(f"Error logging data to Google Sheet: {e}")
 
-def check_landmarks_visibility(landmarks):
+def check_landmarks_visibility(landmarks, mode):
     global all_visible_once_logged, background_color, visible_counter
     
-    visibility_data = {}
+    # visibility_data = {}
     all_visible = True
     
     landmark_coords = {}
@@ -69,7 +74,7 @@ def check_landmarks_visibility(landmarks):
         if visibility < VISIBILITY_THRESHOLD:
             all_visible = False
         
-        visibility_data[part] = visibility
+        # visibility_data[part] = visibility
         x = int(landmark.x * 640)
         y = int(landmark.y * 480)
         landmark_coords[part] = (x, y)
@@ -78,18 +83,26 @@ def check_landmarks_visibility(landmarks):
         if visible_counter < 5:
             visible_counter += 1
         
-        if visible_counter == 5:  
-            if not all_visible_once_logged:
-                shoulder_distance = round((calculate_distance(landmark_coords['Right Shoulder'], landmark_coords['Left Shoulder']) * 1.54) * 0.123, 2)
-                hip_distance = round((calculate_distance(landmark_coords['Right Hip'], landmark_coords['Left Hip']) * 5) * 0.123, 2)
-                torso_height = round((calculate_distance(landmark_coords['Right Shoulder'], landmark_coords['Right Hip'])) * 0.123, 2)
-                leg_height = round((calculate_distance(landmark_coords['Right Hip'], landmark_coords['Right Foot']) * 1.47) * 0.123, 2)
-                thigh_radius = round((calculate_distance(landmark_coords['Right Hip'], landmark_coords['Left Hip']) * 2.5) * 0.123, 2)
+        if visible_counter == 5:
+            if mode == 1:  
+                if not all_visible_once_logged:
+                    shoulder_distance = round((calculate_distance(landmark_coords['Right Shoulder'], landmark_coords['Left Shoulder']) * 1.54) * 0.123, 2)
+                    hip_distance = round((calculate_distance(landmark_coords['Right Hip'], landmark_coords['Left Hip']) * 5) * 0.123, 2)
+                    torso_height = round((calculate_distance(landmark_coords['Right Shoulder'], landmark_coords['Right Hip'])) * 0.123, 2)
+                    leg_height = round((calculate_distance(landmark_coords['Right Hip'], landmark_coords['Right Foot']) * 1.47) * 0.123, 2)
+                    thigh_radius = round((calculate_distance(landmark_coords['Right Hip'], landmark_coords['Left Hip']) * 2.5) * 0.123, 2)
 
-                all_visible_once_logged = True 
-                log_to_google_sheets([shoulder_distance, hip_distance, torso_height, leg_height, thigh_radius])
-            background_color = '#00ff00'
+                    all_visible_once_logged = True 
+                    log_to_google_sheets([shoulder_distance, hip_distance, torso_height, leg_height, thigh_radius])
+                background_color = '#00ff00'
+            
+            elif mode == 0:
+                if not all_visible_once_logged:
+                    shoulder_pixel = calculate_distance(landmark_coords['Right Shoulder'], landmark_coords['Left Shoulder'])
+                    print(shoulder_pixel)
 
+                    all_visible_once_logged = True
+                background_color = '#00ff00'
     else:
         visible_counter = 0
         background_color = '#f58484'
@@ -105,13 +118,13 @@ def draw_landmarks(image):
         mp_drawing.draw_landmarks(image, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
     return image
 
-def process_image_from_bytes(image_bytes):
+def process_image_from_bytes(image_bytes, mode):
     np_img = np.frombuffer(image_bytes, np.uint8)
     img = cv2.imdecode(np_img, cv2.IMREAD_COLOR)
     rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     results = pose.process(rgb_img)
     if results.pose_landmarks:
-        check_landmarks_visibility(results.pose_landmarks.landmark)
+        check_landmarks_visibility(results.pose_landmarks.landmark, mode)
     return results
 
 def generate_frames():
@@ -179,10 +192,29 @@ def existing_value():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-
 @app.route('/video_feed')
 def index():
     return render_template('index.html')
+
+@app.route('/calibration_feed')
+def calibration():
+    return render_template('calibrationPage.html')
+
+@app.route('/calibration_page', methods=['POST'])
+def calculation():
+    try:
+        if 'frame' not in request.files:
+            return jsonify({"success": False, "error": "No frame provided"}), 400
+        
+        frame_file = request.files['frame']
+        image_bytes = frame_file.read()
+        
+        process_image_from_bytes(image_bytes, 0)
+        
+        return jsonify({"success": True, "background_color": background_color, "message": "Frame processed successfully"})
+    
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/process_frame', methods=['POST'])
 def process_frame():
@@ -193,7 +225,7 @@ def process_frame():
         frame_file = request.files['frame']
         image_bytes = frame_file.read()
         
-        process_image_from_bytes(image_bytes)
+        process_image_from_bytes(image_bytes, 1)
         
         return jsonify({"success": True, "background_color": background_color, "message": "Frame processed successfully"})
     

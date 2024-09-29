@@ -15,7 +15,7 @@ function continueWithExisting() {
         .then(data => {
             if (data.success) {
                 // Redirect to video feed on successful submission
-                window.location.href = '/video_feed';
+                window.location.href = '/calibration_feed';
             } else {
                 alert('Error: ' + data.error);
             }
