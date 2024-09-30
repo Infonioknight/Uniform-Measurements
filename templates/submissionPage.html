@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uniform Measurement App</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/submissionStyles.css') }}">
+    <script src="{{ url_for('static', filename='js/submissionScript.js') }}" defer></script>
+</head>
+<body>
+    <div class="record-container">
+        <h2>Measurement successfully recorded!</h2>
+        <p> Please enter your <b>ID</b> below</p>
+        <form id="id-entry-form" class="id-entry-form">
+            <label for="user_id">User ID:</label>
+            <input type="text" id="user_id" name="user_id" required>
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+</body>
+</html>

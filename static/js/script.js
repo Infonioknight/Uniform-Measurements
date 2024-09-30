@@ -74,6 +74,13 @@ function captureAndSendFrame() {
                     if (data.success) {
                         console.log("Frame processed successfully.");
                         document.getElementById('body').style.backgroundColor = data.background_color;
+
+                        // Check if the background color is green and redirect with a delay
+                        if (data.background_color === '#00ff00') {
+                            setTimeout(() => {
+                                window.location.href = '/entry_submission'; // Redirect to entry submission route
+                            }, 2000); // Delay of 2 seconds (2000 milliseconds)
+                        }
                     } else {
                         console.error("Frame processing error: ", data.error);
                     }

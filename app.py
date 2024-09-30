@@ -85,14 +85,14 @@ def check_landmarks_visibility(landmarks, mode):
         if visible_counter == 10:
             if mode == 1:  
                 if not all_visible_once_logged:
-                    shoulder_distance = round((calculate_distance(session['landmark_coords']['Right Shoulder'], session['landmark_coords']['Left Shoulder']) * 1.33) * session['scaling_factor'], 2)
-                    hip_distance = round((calculate_distance(session['landmark_coords']['Right Hip'], session['landmark_coords']['Left Hip']) * 3.7) * session['scaling_factor'], 2) 
-                    torso_height = round((calculate_distance(session['landmark_coords']['Right Shoulder'], session['landmark_coords']['Right Hip']) * 0.95) * session['scaling_factor'], 2) 
-                    leg_height = round((calculate_distance(session['landmark_coords']['Right Hip'], session['landmark_coords']['Right Foot']) * 1.2) * session['scaling_factor'], 2) 
-                    thigh_radius = round((calculate_distance(session['landmark_coords']['Right Hip'], session['landmark_coords']['Left Hip']) * 2) * session['scaling_factor'], 2)
+                    session['shoulder_distance'] = round((calculate_distance(session['landmark_coords']['Right Shoulder'], session['landmark_coords']['Left Shoulder']) * 1.33) * session['scaling_factor'], 2)
+                    session['hip_distance'] = round((calculate_distance(session['landmark_coords']['Right Hip'], session['landmark_coords']['Left Hip']) * 3.7) * session['scaling_factor'], 2) 
+                    session['torso_height'] = round((calculate_distance(session['landmark_coords']['Right Shoulder'], session['landmark_coords']['Right Hip']) * 0.95) * session['scaling_factor'], 2) 
+                    session['leg_height'] = round((calculate_distance(session['landmark_coords']['Right Hip'], session['landmark_coords']['Right Foot']) * 1.2) * session['scaling_factor'], 2) 
+                    session['thigh_radius'] = round((calculate_distance(session['landmark_coords']['Right Hip'], session['landmark_coords']['Left Hip']) * 2) * session['scaling_factor'], 2)
             
                     all_visible_once_logged = True 
-                    log_to_google_sheets([shoulder_distance, hip_distance, torso_height, leg_height, thigh_radius])
+                    # log_to_google_sheets([shoulder_distance, hip_distance, torso_height, leg_height, thigh_radius])
                 background_color = '#00ff00'
             
             elif mode == 0:
@@ -190,13 +190,11 @@ def get_circle_coords():
 
 @app.route('/video_feed') # Display route
 def index():
+    reset_variables()
     return render_template('index.html')
 
 @app.route('/process_frame', methods=['POST']) # Regular feed processing
 def process_frame():
-    if 'initializer' not in session:
-        reset_variables()
-        session['initializer'] = 1
     try:
         if 'frame' not in request.files:
             return jsonify({"success": False, "error": "No frame provided"}), 400
@@ -210,6 +208,18 @@ def process_frame():
     
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/entry_submission')
+def entry_submission_page():
+    return render_template('submissionPage.html')
+
+@app.route('/reading_submission', methods=['POST'])
+def reading_submission():
+    data = request.json
+    user_id = data.get('id')
+
+    log_to_google_sheets([user_id, session['shoulder_distance'], session['hip_distance'], session['torso_height'], session['leg_height'], session['thigh_radius']])
+    return jsonify({"success": True}), 200
 
 if __name__ == '__main__':
     app.run(debug=True, threaded=True)
