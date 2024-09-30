@@ -1,9 +1,8 @@
 document.getElementById('id-entry-form').addEventListener('submit', function(event) {
-    event.preventDefault(); // Prevent the default form submission
+    event.preventDefault(); 
 
     const userId = document.getElementById('user_id').value;
 
-    // Send the ID to the backend
     fetch('/reading_submission', {
         method: 'POST',
         headers: {
@@ -13,8 +12,7 @@ document.getElementById('id-entry-form').addEventListener('submit', function(eve
     })
     .then(response => {
         if (response.ok) {
-            // Redirect to the video feed page
-            window.location.href = '/video_feed'; // Change this to your video feed route
+            window.location.href = '/video_feed'; 
         } else {
             alert('Failed to submit ID. Please try again.');
         }

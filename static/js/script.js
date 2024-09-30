@@ -8,7 +8,6 @@ const circleContext = circleCanvas.getContext('2d');
 circleCanvas.width = 640;
 circleCanvas.height = 480;
 
-// Function to draw circles based on given coordinates
 function drawCircles(circleCoords) {
     circleContext.clearRect(0, 0, circleCanvas.width, circleCanvas.height);
     circleContext.globalAlpha = 0.5;
@@ -16,9 +15,8 @@ function drawCircles(circleCoords) {
 
     const circleRadius = 20;
 
-    // Loop through each coordinate and draw a circle
     for (const coord of Object.values(circleCoords)) {
-        const [x, y] = coord; // Destructure the array to get x and y coordinates
+        const [x, y] = coord; 
         circleContext.beginPath();
         circleContext.arc(x, y, circleRadius, 0, 2 * Math.PI);
         circleContext.fill();
@@ -27,10 +25,9 @@ function drawCircles(circleCoords) {
     circleContext.globalAlpha = 1.0;
 }
 
-// Function to get circle coordinates from session storage
 function getCircleCoordinates() {
     const coords = sessionStorage.getItem('circleCoords');
-    return coords ? JSON.parse(coords) : []; // Return an empty array if no coordinates found
+    return coords ? JSON.parse(coords) : []; 
 }
 
 navigator.mediaDevices.getUserMedia({
@@ -49,7 +46,6 @@ video.addEventListener('canplay', () => {
     video.parentNode.insertBefore(canvas, video);
     video.style.display = 'none';
 
-    // Get circle coordinates from session storage and draw them
     const circleCoords = getCircleCoordinates();
     drawCircles(circleCoords);
 });
@@ -75,11 +71,10 @@ function captureAndSendFrame() {
                         console.log("Frame processed successfully.");
                         document.getElementById('body').style.backgroundColor = data.background_color;
 
-                        // Check if the background color is green and redirect with a delay
                         if (data.background_color === '#00ff00') {
                             setTimeout(() => {
-                                window.location.href = '/entry_submission'; // Redirect to entry submission route
-                            }, 2000); // Delay of 2 seconds (2000 milliseconds)
+                                window.location.href = '/entry_submission'; 
+                            }, 2000); 
                         }
                     } else {
                         console.error("Frame processing error: ", data.error);

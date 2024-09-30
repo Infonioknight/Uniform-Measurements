@@ -11,21 +11,21 @@ body {
 
 .video-container {
     display: inline-block;
-    background-color: #ffcccc; /* Light red */
+    background-color: #ffcccc;
     padding: 10px;
     border-radius: 15px;
     box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.2);
 }
 
 .action-button {
-    padding: 12px 20px; /* Button padding */
-    background-color: #ffccdd; /* Soft green */
-    color: #444444; /* White text */
-    border: none; /* No border */
-    border-radius: 5px; /* Rounded corners */
-    cursor: pointer; /* Pointer on hover */
-    font-size: 16px; /* Button font size */
-    margin: 0 10px; /* Add spacing between buttons */
+    padding: 12px 20px;
+    background-color: #ffccdd;
+    color: #444444;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    margin: 0 10px;
     transition: background-color 0.3s ease; 
 }
 

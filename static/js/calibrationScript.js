@@ -4,7 +4,6 @@ const context = canvas.getContext('2d');
 let frameCaptureInterval;  
 let isCalibrationComplete = false;  
 
-
 navigator.mediaDevices.getUserMedia({
     video: true
 }).then(stream => {
@@ -107,11 +106,11 @@ document.getElementById('recalibrate').addEventListener('click', () => {
 
 function fetchCircleCoordinates() {
     return fetch('/get_circle_coords', {
-        method: 'POST', // Specify POST method
+        method: 'POST', 
         headers: {
-            'Content-Type': 'application/json', // Set the content type
+            'Content-Type': 'application/json', 
         },
-        body: JSON.stringify({}) // Send an empty body if needed
+        body: JSON.stringify({})
     })
     .then(response => {
         if (!response.ok) {
@@ -120,20 +119,14 @@ function fetchCircleCoordinates() {
         return response.json();
     })
     .then(data => {
-        // Assuming 'data.coordinates' contains the circle coordinates
         const circleCoords = data.coordinates;
-
-        // Store the coordinates in sessionStorage
         sessionStorage.setItem('circleCoords', JSON.stringify(circleCoords));
     });
 }
 
-// Add this to the continue button's click event
 document.getElementById('continue').addEventListener('click', () => {
-    // Fetch circle coordinates before redirecting
     fetchCircleCoordinates()
         .then(() => {
-            // Redirect to video feed after successfully storing coordinates
             window.location.href = '/video_feed';
         })
         .catch(err => {

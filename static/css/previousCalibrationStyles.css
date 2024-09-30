@@ -1,53 +1,48 @@
-/* Global body styling */
 body {
     font-family: Arial, sans-serif;
-    background-color: #f8f9fa; /* Soft white background */
+    background-color: #f8f9fa;
     margin: 0;
     padding: 0;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh; /* Full viewport height */
+    height: 100vh;
 }
 
-/* Container styling */
 .container {
-    background-color: #ffffff; /* White for contrast */
+    background-color: #ffffff;
     padding: 40px;
     border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Soft shadow for depth */
-    max-width: 400px; /* Limit the width of the container */
-    width: 100%; /* Full width up to max */
-    text-align: center; /* Center text inside container */
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    max-width: 400px;
+    width: 100%;
+    text-align: center;
 }
 
-/* Heading styling */
 h1 {
     font-size: 24px;
     margin-bottom: 20px;
     color: #333;
 }
 
-/* Paragraph styling */
 p {
     font-size: 16px;
     margin-bottom: 30px;
     color: #666;
 }
 
-/* Button styling */
 .action-button {
-    padding: 12px 20px; /* Button padding */
-    background-color: #28a745; /* Soft green */
-    color: white; /* White text */
-    border: none; /* No border */
-    border-radius: 5px; /* Rounded corners */
-    cursor: pointer; /* Pointer on hover */
-    font-size: 16px; /* Button font size */
-    margin: 0 10px; /* Add spacing between buttons */
-    transition: background-color 0.3s ease; /* Smooth hover transition */
+    padding: 12px 20px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    margin: 0 10px;
+    transition: background-color 0.3s ease;
 }
 
 .action-button:hover {
-    background-color: #218838; /* Darker green on hover */
+    background-color: #218838;
 }

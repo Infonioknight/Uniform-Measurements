@@ -1,56 +1,52 @@
-/* Global body styling */
 body {
     font-family: Arial, sans-serif;
-    background-color: #f8f9fa; /* Soft white background */
+    background-color: #f8f9fa;
     margin: 0;
     padding: 0;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh; /* Full viewport height */
+    height: 100vh;
 }
 
-/* Container styling */
 .container {
-    background-color: #ffffff; /* White for contrast */
+    background-color: #ffffff;
     padding: 40px;
     border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Soft shadow for depth */
-    max-width: 400px; /* Limit the width of the container */
-    width: 100%; /* Full width up to max */
-    text-align: center; /* Center text inside container */
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    max-width: 400px;
+    width: 100%;
+    text-align: center;
 }
 
-/* Form styling */
 .measurement-form {
     display: flex;
-    flex-direction: column; /* Stack elements vertically */
-    gap: 15px; /* Space between form elements */
+    flex-direction: column;
+    gap: 15px;
 }
 
 .measurement-form label {
-    font-size: 16px; /* Label font size */
-    text-align: left; /* Align text to the left */
+    font-size: 16px;
+    text-align: left;
 }
 
 .measurement-form input {
-    padding: 10px; /* Input padding */
-    border-radius: 5px; /* Rounded corners */
-    border: 1px solid #ccc; /* Light border */
-    font-size: 14px; /* Input font size */
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-size: 14px;
 }
 
-/* Button styling */
 .measurement-form button {
-    padding: 10px; /* Button padding */
-    background-color: #28a745; /* Soft green */
-    color: white; /* White text */
-    border: none; /* No border */
-    border-radius: 5px; /* Rounded corners */
-    cursor: pointer; /* Pointer on hover */
-    font-size: 16px; /* Button font size */
+    padding: 10px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
 }
 
 .measurement-form button:hover {
-    background-color: #218838; /* Darker green on hover */
+    background-color: #218838;
 }

@@ -92,7 +92,6 @@ def check_landmarks_visibility(landmarks, mode):
                     session['thigh_radius'] = round((calculate_distance(session['landmark_coords']['Right Hip'], session['landmark_coords']['Left Hip']) * 2) * session['scaling_factor'], 2)
             
                     all_visible_once_logged = True 
-                    # log_to_google_sheets([shoulder_distance, hip_distance, torso_height, leg_height, thigh_radius])
                 background_color = '#00ff00'
             
             elif mode == 0:
@@ -126,15 +125,15 @@ def reset_variables():
     visible_counter = 0 
     all_visible_once_logged = False  
 
-@app.route('/') # Display route
+@app.route('/') 
 def landing():
     return render_template('landing.html')
 
-@app.route('/previous_calibration') # Display route
+@app.route('/previous_calibration')
 def previous_calibration():
     return render_template('previous_calibration.html')
 
-@app.route('/submit_measurements', methods=['POST']) # Shoulder measurement submission
+@app.route('/submit_measurements', methods=['POST']) 
 def submit_measurements():
     try:
         shoulder_width = request.form.get('shoulder_width')  
@@ -147,11 +146,11 @@ def submit_measurements():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-@app.route('/calibration_feed') # Display route
+@app.route('/calibration_feed') 
 def calibration():
     return render_template('calibrationPage.html')
 
-@app.route('/calibration_page', methods=['POST']) # Processing the calibration feed
+@app.route('/calibration_page', methods=['POST']) 
 def calculation():
     try:
         if 'frame' not in request.files:
@@ -167,7 +166,7 @@ def calculation():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-@app.route('/re_calibrate', methods=['POST']) # Re-calibration reset
+@app.route('/re_calibrate', methods=['POST'])
 def re_calibrate():
     global background_color, visible_counter, all_visible_once_logged, scaling_factor, calibration_measurement
 
@@ -177,7 +176,7 @@ def re_calibrate():
 
     return jsonify({"success": True, "message": "Calibration reset and background color updated"}), 200
 
-@app.route('/get_circle_coords', methods=['POST']) # To retrieve the circles for highlighting part positions
+@app.route('/get_circle_coords', methods=['POST'])
 def get_circle_coords():
     circle_coords = {
         'right_shoulder': session['landmark_coords']['Right Shoulder'],
@@ -188,12 +187,12 @@ def get_circle_coords():
 
     return jsonify({"success": True, "coordinates": circle_coords}), 200
 
-@app.route('/video_feed') # Display route
+@app.route('/video_feed') 
 def index():
     reset_variables()
     return render_template('index.html')
 
-@app.route('/process_frame', methods=['POST']) # Regular feed processing
+@app.route('/process_frame', methods=['POST']) 
 def process_frame():
     try:
         if 'frame' not in request.files:
