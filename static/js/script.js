@@ -8,31 +8,29 @@ const circleContext = circleCanvas.getContext('2d');
 circleCanvas.width = 640;
 circleCanvas.height = 480;
 
-function drawCircles() {
+// Function to draw circles based on given coordinates
+function drawCircles(circleCoords) {
     circleContext.clearRect(0, 0, circleCanvas.width, circleCanvas.height);
     circleContext.globalAlpha = 0.5;
     circleContext.fillStyle = 'rgba(255, 255, 255, 1)';
 
     const circleRadius = 20;
-    const circleSpacing = 50;
 
-    circleContext.beginPath();
-    circleContext.arc(circleCanvas.width / 2, circleCanvas.height / 2, circleRadius, 0, 2 * Math.PI);
-    circleContext.fill();
-
-    circleContext.beginPath();
-    circleContext.arc(circleCanvas.width / 2 - circleSpacing, circleCanvas.height / 2, circleRadius, 0, 2 * Math.PI);
-    circleContext.fill();
-
-    circleContext.beginPath();
-    circleContext.arc(circleCanvas.width / 2 + circleSpacing, circleCanvas.height / 2, circleRadius, 0, 2 * Math.PI);
-    circleContext.fill();
-
-    circleContext.beginPath();
-    circleContext.arc(circleCanvas.width / 2, circleCanvas.height / 2 - circleSpacing, circleRadius, 0, 2 * Math.PI);
-    circleContext.fill();
+    // Loop through each coordinate and draw a circle
+    for (const coord of Object.values(circleCoords)) {
+        const [x, y] = coord; // Destructure the array to get x and y coordinates
+        circleContext.beginPath();
+        circleContext.arc(x, y, circleRadius, 0, 2 * Math.PI);
+        circleContext.fill();
+    }
 
     circleContext.globalAlpha = 1.0;
+}
+
+// Function to get circle coordinates from session storage
+function getCircleCoordinates() {
+    const coords = sessionStorage.getItem('circleCoords');
+    return coords ? JSON.parse(coords) : []; // Return an empty array if no coordinates found
 }
 
 navigator.mediaDevices.getUserMedia({
@@ -51,7 +49,9 @@ video.addEventListener('canplay', () => {
     video.parentNode.insertBefore(canvas, video);
     video.style.display = 'none';
 
-    drawCircles();
+    // Get circle coordinates from session storage and draw them
+    const circleCoords = getCircleCoordinates();
+    drawCircles(circleCoords);
 });
 
 function captureAndSendFrame() {

@@ -105,4 +105,41 @@ document.getElementById('recalibrate').addEventListener('click', () => {
         });
 });
 
+function fetchCircleCoordinates() {
+    return fetch('/get_circle_coords', {
+        method: 'POST', // Specify POST method
+        headers: {
+            'Content-Type': 'application/json', // Set the content type
+        },
+        body: JSON.stringify({}) // Send an empty body if needed
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Assuming 'data.coordinates' contains the circle coordinates
+        const circleCoords = data.coordinates;
+
+        // Store the coordinates in sessionStorage
+        sessionStorage.setItem('circleCoords', JSON.stringify(circleCoords));
+    });
+}
+
+// Add this to the continue button's click event
+document.getElementById('continue').addEventListener('click', () => {
+    // Fetch circle coordinates before redirecting
+    fetchCircleCoordinates()
+        .then(() => {
+            // Redirect to video feed after successfully storing coordinates
+            window.location.href = '/video_feed';
+        })
+        .catch(err => {
+            console.error('Error fetching circle coordinates: ', err);
+            alert('Failed to fetch circle coordinates. Please try again.');
+        });
+});
+
 frameCaptureInterval = setInterval(captureAndSendFrame, 100);

@@ -66,7 +66,7 @@ def check_landmarks_visibility(landmarks, mode):
    
     all_visible = True
     
-    landmark_coords = {}
+    session['landmark_coords'] = {}
     for part, index in LANDMARKS_TO_TRACK.items():
         landmark = landmarks[index]
         visibility = landmark.visibility
@@ -76,7 +76,7 @@ def check_landmarks_visibility(landmarks, mode):
     
         x = int(landmark.x * 640)
         y = int(landmark.y * 480)
-        landmark_coords[part] = (x, y)
+        session['landmark_coords'][part] = (x, y)
 
     if all_visible:
         if visible_counter < 10:
@@ -85,20 +85,21 @@ def check_landmarks_visibility(landmarks, mode):
         if visible_counter == 10:
             if mode == 1:  
                 if not all_visible_once_logged:
-                    shoulder_distance = round((calculate_distance(landmark_coords['Right Shoulder'], landmark_coords['Left Shoulder']) * 1.54) * 0.123, 2)
-                    hip_distance = round((calculate_distance(landmark_coords['Right Hip'], landmark_coords['Left Hip']) * 5) * 0.123, 2)
-                    torso_height = round((calculate_distance(landmark_coords['Right Shoulder'], landmark_coords['Right Hip'])) * 0.123, 2)
-                    leg_height = round((calculate_distance(landmark_coords['Right Hip'], landmark_coords['Right Foot']) * 1.47) * 0.123, 2)
-                    thigh_radius = round((calculate_distance(landmark_coords['Right Hip'], landmark_coords['Left Hip']) * 2.5) * 0.123, 2)
-
+                    shoulder_distance = round((calculate_distance(session['landmark_coords']['Right Shoulder'], session['landmark_coords']['Left Shoulder']) * 1.33) * session['scaling_factor'], 2)
+                    hip_distance = round((calculate_distance(session['landmark_coords']['Right Hip'], session['landmark_coords']['Left Hip']) * 3.7) * session['scaling_factor'], 2) 
+                    torso_height = round((calculate_distance(session['landmark_coords']['Right Shoulder'], session['landmark_coords']['Right Hip']) * 0.95) * session['scaling_factor'], 2) 
+                    leg_height = round((calculate_distance(session['landmark_coords']['Right Hip'], session['landmark_coords']['Right Foot']) * 1.2) * session['scaling_factor'], 2) 
+                    thigh_radius = round((calculate_distance(session['landmark_coords']['Right Hip'], session['landmark_coords']['Left Hip']) * 2) * session['scaling_factor'], 2)
+            
                     all_visible_once_logged = True 
                     log_to_google_sheets([shoulder_distance, hip_distance, torso_height, leg_height, thigh_radius])
                 background_color = '#00ff00'
             
             elif mode == 0:
                 if not all_visible_once_logged:
-                    shoulder_pixel = calculate_distance(landmark_coords['Right Shoulder'], landmark_coords['Left Shoulder'])
-                    print(shoulder_pixel)
+                    session['calibration_measurement'] = calculate_distance(session['landmark_coords']['Right Shoulder'], session['landmark_coords']['Left Shoulder'])
+                    session['scaling_factor'] = (session['shoulder_width'] / session['calibration_measurement']) * 0.75
+                    print(session['scaling_factor'])
 
                     all_visible_once_logged = True
                 background_color = '#00ff00'
@@ -118,21 +119,27 @@ def process_image_from_bytes(image_bytes, mode):
         check_landmarks_visibility(results.pose_landmarks.landmark, mode)
     return results
 
-@app.route('/')
+def reset_variables():
+    global background_color, visible_counter, all_visible_once_logged
+
+    background_color = '#f58484'
+    visible_counter = 0 
+    all_visible_once_logged = False  
+
+@app.route('/') # Display route
 def landing():
     return render_template('landing.html')
 
-@app.route('/previous_calibration')
+@app.route('/previous_calibration') # Display route
 def previous_calibration():
     return render_template('previous_calibration.html')
 
-@app.route('/submit_measurements', methods=['POST'])
+@app.route('/submit_measurements', methods=['POST']) # Shoulder measurement submission
 def submit_measurements():
     try:
-        shoulder_width = request.form.get('shoulder_width')  # Get shoulder width from the form
+        shoulder_width = request.form.get('shoulder_width')  
         if shoulder_width:
-            session['shoulder_width'] = shoulder_width  # Store the measurement in the session
-            print(f"Shoulder width submitted and stored in session: {session['shoulder_width']}")  # Print to console
+            session['shoulder_width'] = float(shoulder_width )
             return jsonify({"success": True, "message": "Measurement stored successfully!"})
         else:
             return jsonify({"success": False, "error": "No measurement provided"}), 400
@@ -140,29 +147,11 @@ def submit_measurements():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-@app.route('/existing_value', methods=['POST'])
-def existing_value():
-    try:
-        shoulder_width = request.form.get('shoulder_width') 
-        if shoulder_width:
-            session['shoulder_width'] = shoulder_width  
-            print(f"Existing shoulder width retrieved and stored in session: {session['shoulder_width']}") 
-            return jsonify({"success": True, "message": "Existing measurement stored successfully!"})
-        else:
-            return jsonify({"success": False, "error": "No existing measurement provided"}), 400
-            
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
-
-@app.route('/video_feed')
-def index():
-    return render_template('index.html')
-
-@app.route('/calibration_feed')
+@app.route('/calibration_feed') # Display route
 def calibration():
     return render_template('calibrationPage.html')
 
-@app.route('/calibration_page', methods=['POST'])
+@app.route('/calibration_page', methods=['POST']) # Processing the calibration feed
 def calculation():
     try:
         if 'frame' not in request.files:
@@ -178,19 +167,36 @@ def calculation():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-@app.route('/re_calibrate', methods=['POST'])
+@app.route('/re_calibrate', methods=['POST']) # Re-calibration reset
 def re_calibrate():
-    global background_color, visible_counter, all_visible_once_logged, pose
+    global background_color, visible_counter, all_visible_once_logged, scaling_factor, calibration_measurement
 
-    background_color = '#f58484'
-    visible_counter = 0 
-    all_visible_once_logged = False  
+    reset_variables()
+    session['calibration_measurement'] = 0
+    session['scaling_factor'] = 0
 
     return jsonify({"success": True, "message": "Calibration reset and background color updated"}), 200
 
+@app.route('/get_circle_coords', methods=['POST']) # To retrieve the circles for highlighting part positions
+def get_circle_coords():
+    circle_coords = {
+        'right_shoulder': session['landmark_coords']['Right Shoulder'],
+        'left_shoulder': session['landmark_coords']['Left Shoulder'],
+        'right_foot': session['landmark_coords']['Right Foot'],
+        'left_foot': session['landmark_coords']['Left Foot'],
+    }
 
-@app.route('/process_frame', methods=['POST'])
+    return jsonify({"success": True, "coordinates": circle_coords}), 200
+
+@app.route('/video_feed') # Display route
+def index():
+    return render_template('index.html')
+
+@app.route('/process_frame', methods=['POST']) # Regular feed processing
 def process_frame():
+    if 'initializer' not in session:
+        reset_variables()
+        session['initializer'] = 1
     try:
         if 'frame' not in request.files:
             return jsonify({"success": False, "error": "No frame provided"}), 400

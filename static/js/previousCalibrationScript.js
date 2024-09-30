@@ -2,7 +2,7 @@ function continueWithExisting() {
     const shoulderWidth = localStorage.getItem('shoulder_width');
 
     if (shoulderWidth) {
-        fetch('/existing_value', {
+        fetch('/submit_measurements', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
