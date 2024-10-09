@@ -1,8 +1,10 @@
+const backendURL = 'https://uniform-1060926045936.asia-southeast1.run.app'
+
 function continueWithExisting() {
     const shoulderWidth = localStorage.getItem('shoulder_width');
 
     if (shoulderWidth) {
-        fetch('/submit_measurements', {
+        fetch(`${backendURL}/submit_measurements`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -12,7 +14,7 @@ function continueWithExisting() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                window.location.href = '/calibration_feed';
+                window.location.href = `${backendURL}/calibration_feed`;
             } else {
                 alert('Error: ' + data.error);
             }
@@ -22,5 +24,5 @@ function continueWithExisting() {
 
 function recalibrate() {
     localStorage.removeItem('shoulder_width'); 
-    window.location.href = '/'; 
+    window.location.href = `${backendURL}/`; 
 }

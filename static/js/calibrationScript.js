@@ -3,6 +3,7 @@ const canvas = document.createElement('canvas');
 const context = canvas.getContext('2d');
 let frameCaptureInterval;  
 let isCalibrationComplete = false;  
+const backendURL = 'https://uniform-1060926045936.asia-southeast1.run.app'
 
 navigator.mediaDevices.getUserMedia({
     video: true
@@ -32,7 +33,7 @@ function captureAndSendFrame() {
                 const formData = new FormData();
                 formData.append('frame', blob, 'frame.jpg'); 
 
-                fetch(`/calibration_page`, {
+                fetch(`${backendURL}/calibration_page`, {
                     method: 'POST',
                     body: formData
                 })
@@ -75,7 +76,7 @@ document.getElementById('recalibrate').addEventListener('click', () => {
     video.pause();  
     video.srcObject.getTracks().forEach(track => track.stop()); 
 
-    fetch('/re_calibrate', { method: 'POST' })  
+    fetch(`${backendURL}/re_calibrate`, { method: 'POST' })  
         .then(response => {
             if (!response.ok) {
                 throw new Error('Network response was not ok');
@@ -105,7 +106,7 @@ document.getElementById('recalibrate').addEventListener('click', () => {
 });
 
 function fetchCircleCoordinates() {
-    return fetch('/get_circle_coords', {
+    return fetch(`${backendURL}/get_circle_coords`, {
         method: 'POST', 
         headers: {
             'Content-Type': 'application/json', 
@@ -127,7 +128,7 @@ function fetchCircleCoordinates() {
 document.getElementById('continue').addEventListener('click', () => {
     fetchCircleCoordinates()
         .then(() => {
-            window.location.href = '/video_feed';
+            window.location.href = `${backendURL}/video_feed`;
         })
         .catch(err => {
             console.error('Error fetching circle coordinates: ', err);

@@ -1,9 +1,11 @@
+const backendURL = 'https://uniform-1060926045936.asia-southeast1.run.app'
+
 document.getElementById('id-entry-form').addEventListener('submit', function(event) {
     event.preventDefault(); 
 
     const userId = document.getElementById('user_id').value;
 
-    fetch('/reading_submission', {
+    fetch(`${backendURL}/reading_submission`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -12,7 +14,7 @@ document.getElementById('id-entry-form').addEventListener('submit', function(eve
     })
     .then(response => {
         if (response.ok) {
-            window.location.href = '/video_feed'; 
+            window.location.href = `${backendURL}/video_feed`; 
         } else {
             alert('Failed to submit ID. Please try again.');
         }

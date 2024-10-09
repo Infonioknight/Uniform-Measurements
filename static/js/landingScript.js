@@ -1,7 +1,9 @@
+const backendURL = 'https://uniform-1060926045936.asia-southeast1.run.app'
+
 document.addEventListener('DOMContentLoaded', function() {
     const existingValue = localStorage.getItem('shoulder_width');
     if (existingValue) {
-        window.location.href = '/previous_calibration';
+        window.location.href = `${backendURL}/previous_calibration`;
     }
 
     const form = document.getElementById('measurement-form');
@@ -13,7 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         localStorage.setItem('shoulder_width', shoulderWidthInput);
 
-        fetch('/submit_measurements', {
+        fetch(`${backendURL}/submit_measurements`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -23,7 +25,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                window.location.href = '/calibration_feed';
+                window.location.href = `${backendURL}/calibration_feed`;
             } else {
                 alert('Error: ' + data.error);
             }

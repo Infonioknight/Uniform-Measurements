@@ -4,6 +4,7 @@ const context = canvas.getContext('2d');
 
 const circleCanvas = document.createElement('canvas');
 const circleContext = circleCanvas.getContext('2d');
+const backendURL = 'https://uniform-1060926045936.asia-southeast1.run.app'
 
 circleCanvas.width = 640;
 circleCanvas.height = 480;
@@ -61,7 +62,7 @@ function captureAndSendFrame() {
                 const formData = new FormData();
                 formData.append('frame', blob, 'frame.jpg');
 
-                fetch(`/process_frame`, {
+                fetch(`${backendURL}/process_frame`, {
                     method: 'POST',
                     body: formData
                 })
