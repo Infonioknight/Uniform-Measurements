@@ -1,4 +1,5 @@
-const backendURL = 'https://uniform-1060926045936.asia-southeast1.run.app'
+// const backendURL = 'https://uniform-1060926045936.asia-southeast1.run.app'
+const backendURL = 'http://127.0.0.1:5000'
 
 document.getElementById('id-entry-form').addEventListener('submit', function(event) {
     event.preventDefault(); 

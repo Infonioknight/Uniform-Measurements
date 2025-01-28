@@ -4,7 +4,8 @@ const context = canvas.getContext('2d');
 
 const circleCanvas = document.createElement('canvas');
 const circleContext = circleCanvas.getContext('2d');
-const backendURL = 'https://uniform-1060926045936.asia-southeast1.run.app'
+// const backendURL = 'https://uniform-1060926045936.asia-southeast1.run.app'
+const backendURL = 'http://127.0.0.1:5000'
 
 circleCanvas.width = 640;
 circleCanvas.height = 480;
@@ -12,7 +13,7 @@ circleCanvas.height = 480;
 function drawCircles(circleCoords) {
     circleContext.clearRect(0, 0, circleCanvas.width, circleCanvas.height);
     circleContext.globalAlpha = 0.5;
-    circleContext.fillStyle = 'rgba(255, 255, 255, 1)';
+    circleContext.fillStyle = 'rgb(252, 89, 89)';
 
     const circleRadius = 20;
 
@@ -75,7 +76,7 @@ function captureAndSendFrame() {
                         if (data.background_color === '#00ff00') {
                             setTimeout(() => {
                                 window.location.href = '/entry_submission'; 
-                            }, 2000); 
+                            }, 1500); 
                         }
                     } else {
                         console.error("Frame processing error: ", data.error);

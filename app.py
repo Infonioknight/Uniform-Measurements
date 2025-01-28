@@ -63,35 +63,52 @@ def log_to_google_sheets(data):
 
 def check_landmarks_visibility(landmarks, mode):
     global all_visible_once_logged, background_color, visible_counter
-   
-    all_visible = True
-    
+
     session['landmark_coords'] = {}
+    all_visible = True
+
+    if mode == 1:
+        reference_coord = session.get('circle_coord')
+        if reference_coord is None:
+            print("Circle coordinates not found in session.")
+            return False
+
+        right_ankle = landmarks[LANDMARKS_TO_TRACK['Right Foot']]
+        left_ankle = landmarks[LANDMARKS_TO_TRACK['Left Foot']]
+
+        right_y, left_y = int(right_ankle.y * 480), int(left_ankle.y * 480)
+
+        if abs(right_y - left_y) > 3:
+            all_visible = False
+            background_color = '#f58484'
+            visible_counter = 0
+            all_visible_once_logged = False
+            return False
+
     for part, index in LANDMARKS_TO_TRACK.items():
         landmark = landmarks[index]
         visibility = landmark.visibility
 
         if visibility < VISIBILITY_THRESHOLD:
             all_visible = False
-    
-        x = int(landmark.x * 640)
-        y = int(landmark.y * 480)
+
+        x, y = int(landmark.x * 640), int(landmark.y * 480)
         session['landmark_coords'][part] = (x, y)
 
     if all_visible:
-        if visible_counter < 10:
+        if visible_counter < 15:
             visible_counter += 1
         
-        if visible_counter == 10:
-            if mode == 1:  
+        if visible_counter == 15:
+            if mode == 1:
                 if not all_visible_once_logged:
                     session['shoulder_distance'] = round((calculate_distance(session['landmark_coords']['Right Shoulder'], session['landmark_coords']['Left Shoulder']) * 1.33) * session['scaling_factor'], 2)
-                    session['hip_distance'] = round((calculate_distance(session['landmark_coords']['Right Hip'], session['landmark_coords']['Left Hip']) * 3.7) * session['scaling_factor'], 2) 
-                    session['torso_height'] = round((calculate_distance(session['landmark_coords']['Right Shoulder'], session['landmark_coords']['Right Hip']) * 0.95) * session['scaling_factor'], 2) 
-                    session['leg_height'] = round((calculate_distance(session['landmark_coords']['Right Hip'], session['landmark_coords']['Right Foot']) * 1.2) * session['scaling_factor'], 2) 
+                    session['hip_distance'] = round((calculate_distance(session['landmark_coords']['Right Hip'], session['landmark_coords']['Left Hip']) * 3.7) * session['scaling_factor'], 2)
+                    session['torso_height'] = round((calculate_distance(session['landmark_coords']['Right Shoulder'], session['landmark_coords']['Right Hip']) * 0.95) * session['scaling_factor'], 2)
+                    session['leg_height'] = round((calculate_distance(session['landmark_coords']['Right Hip'], session['landmark_coords']['Right Foot']) * 1.2) * session['scaling_factor'], 2)
                     session['thigh_radius'] = round((calculate_distance(session['landmark_coords']['Right Hip'], session['landmark_coords']['Left Hip']) * 2) * session['scaling_factor'], 2)
-            
-                    all_visible_once_logged = True 
+
+                    all_visible_once_logged = True
                 background_color = '#00ff00'
             
             elif mode == 0:
@@ -105,7 +122,7 @@ def check_landmarks_visibility(landmarks, mode):
     else:
         visible_counter = 0
         background_color = '#f58484'
-        all_visible_once_logged = False
+        # all_visible_once_logged = False
 
     return all_visible
 
@@ -178,12 +195,14 @@ def re_calibrate():
 
 @app.route('/get_circle_coords', methods=['POST'])
 def get_circle_coords():
+    right_x, right_y = session['landmark_coords']['Right Foot']
+    left_x, _ = session['landmark_coords']['Left Foot']
+
+    reference_coord = [(right_x + left_x) / 2, right_y] 
     circle_coords = {
-        'right_shoulder': session['landmark_coords']['Right Shoulder'],
-        'left_shoulder': session['landmark_coords']['Left Shoulder'],
-        'right_foot': session['landmark_coords']['Right Foot'],
-        'left_foot': session['landmark_coords']['Left Foot'],
+        'reference_coord': reference_coord,
     }
+    session['circle_coord'] = reference_coord
 
     return jsonify({"success": True, "coordinates": circle_coords}), 200
 
