@@ -8,6 +8,9 @@ from flask_cors import CORS
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import time
+import pickle
+import sklearn
+import pandas as pd
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -22,17 +25,25 @@ mp_pose = mp.solutions.pose
 pose = mp_pose.Pose()
 mp_drawing = mp.solutions.drawing_utils
 
+with open('models/chest_model.pkl', 'rb') as f:
+    chest_model = pickle.load(f)
+
+with open('models/waist_model.pkl', 'rb') as f:
+    waist_model = pickle.load(f)
+
 LANDMARKS_TO_TRACK = {
-    'Right Shoulder': 11,
-    'Left Shoulder': 12,
-    'Right Hip': 23,
-    'Left Hip': 24,
-    'Right Knee': 25,
-    'Left Knee': 26,
-    'Right Foot': 27,
-    'Left Foot': 28,
-    'Right Elbow': 13,
-    'Left Elbow': 14
+    'Right Shoulder': 11, # Need
+    'Left Shoulder': 12, # Need
+    'Right Hip': 23, # Need 
+    'Left Hip': 24, # Need
+    'Right Knee': 25, # Need
+    'Left Knee': 26, # Need
+    'Right Foot': 27, # Need
+    'Left Foot': 28, # Need 
+    'Right Elbow': 13, # Need
+    'Left Elbow': 14, # Need
+    'Left Wrist': 15, # Need
+    'Right Wrist': 16 # Need
 }
 
 LANDMARKS_TO_CALIBRATE = {
@@ -73,6 +84,7 @@ def check_landmarks_visibility(landmarks, mode):
             print("Circle coordinates not found in session.")
             return False
 
+        # This part of the code is for the positioning (midpoint of ankles)
         right_ankle = landmarks[LANDMARKS_TO_TRACK['Right Foot']]
         left_ankle = landmarks[LANDMARKS_TO_TRACK['Left Foot']]
 
@@ -84,7 +96,7 @@ def check_landmarks_visibility(landmarks, mode):
             visible_counter = 0
             all_visible_once_logged = False
             return False
-
+        # End of ankle checking
     for part, index in LANDMARKS_TO_TRACK.items():
         landmark = landmarks[index]
         visibility = landmark.visibility
@@ -103,10 +115,11 @@ def check_landmarks_visibility(landmarks, mode):
             if mode == 1:
                 if not all_visible_once_logged:
                     session['shoulder_distance'] = round((calculate_distance(session['landmark_coords']['Right Shoulder'], session['landmark_coords']['Left Shoulder']) * 1.33) * session['scaling_factor'], 2)
-                    session['hip_distance'] = round((calculate_distance(session['landmark_coords']['Right Hip'], session['landmark_coords']['Left Hip']) * 3.7) * session['scaling_factor'], 2)
+                    session['calf'] = round((calculate_distance(session['landmark_coords']['Right Foot'], session['landmark_coords']['Right Knee']) * 1) * session['scaling_factor'], 2)
+                    session['thigh'] = round((calculate_distance(session['landmark_coords']['Right Knee'], session['landmark_coords']['Right Hip']) * 1) * session['scaling_factor'], 2)
+                    session['forearm'] = round((calculate_distance(session['landmark_coords']['Right Elbow'], session['landmark_coords']['Right Wrist']) * 1) * session['scaling_factor'], 2)
                     session['torso_height'] = round((calculate_distance(session['landmark_coords']['Right Shoulder'], session['landmark_coords']['Right Hip']) * 0.95) * session['scaling_factor'], 2)
-                    session['leg_height'] = round((calculate_distance(session['landmark_coords']['Right Hip'], session['landmark_coords']['Right Foot']) * 1.2) * session['scaling_factor'], 2)
-                    session['thigh_radius'] = round((calculate_distance(session['landmark_coords']['Right Hip'], session['landmark_coords']['Left Hip']) * 2) * session['scaling_factor'], 2)
+                    session['leg_height'] = round((calculate_distance(session['landmark_coords']['Right Hip'], session['landmark_coords']['Right Foot']) * 1.1) * session['scaling_factor'], 2)
 
                     all_visible_once_logged = True
                 background_color = '#00ff00'
@@ -233,10 +246,23 @@ def entry_submission_page():
 
 @app.route('/reading_submission', methods=['POST'])
 def reading_submission():
+    # 'calf', 'forearm', 'shoulder-breadth', 'thigh', 'torso-to-leg-length'
     data = request.json
     user_id = data.get('id')
 
-    log_to_google_sheets([user_id, session['shoulder_distance'], session['hip_distance'], session['torso_height'], session['leg_height'], session['thigh_radius']])
+    print(session['calf'], session['thigh'], session['forearm'])
+    X_new = pd.DataFrame([[
+        session['calf'],
+        session['forearm'],
+        session['shoulder_distance'],
+        session['thigh'],
+    ]], columns=['calf', 'forearm', 'shoulder-breadth', 'thigh'])
+    
+    session['chest'] = round(chest_model.predict(X_new)[0], 2)
+    X_new['torso-to-leg-length'] = round(session['torso_height'] / session['leg_height'], 2)
+    session['waist'] = round(waist_model.predict(X_new)[0], 2)
+
+    log_to_google_sheets([user_id, session['shoulder_distance'], session['waist'], session['torso_height'], session['leg_height'], session['chest']])
     return jsonify({"success": True}), 200
 
 if __name__ == '__main__':
