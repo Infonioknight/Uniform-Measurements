@@ -1,6 +1,6 @@
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f4f7f9;
     margin: 0;
     padding: 0;
     display: flex;
@@ -10,43 +10,48 @@ body {
 }
 
 .container {
-    background-color: #ffffff;
-    padding: 40px;
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    max-width: 400px;
-    width: 100%;
+    background: white;
+    padding: 2rem 3rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    max-width: 500px;
     text-align: center;
 }
 
-.measurement-form {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
+h1 {
+    font-size: 1.8rem;
+    color: #333;
+    margin-bottom: 1rem;
 }
 
-.measurement-form label {
-    font-size: 16px;
+p {
+    font-size: 1rem;
+    color: #666;
+    margin-bottom: 1rem;
+}
+
+ul {
     text-align: left;
+    margin-bottom: 2rem;
+    padding-left: 1.2rem;
+    color: #444;
 }
 
-.measurement-form input {
-    padding: 10px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-    font-size: 14px;
+li {
+    margin-bottom: 0.8rem;
 }
 
-.measurement-form button {
-    padding: 10px;
-    background-color: #28a745;
+button {
+    background-color: #007bff;
     color: white;
     border: none;
-    border-radius: 5px;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    border-radius: 8px;
     cursor: pointer;
-    font-size: 16px;
+    transition: background-color 0.3s ease;
 }
 
-.measurement-form button:hover {
-    background-color: #218838;
+button:hover {
+    background-color: #0056b3;
 }

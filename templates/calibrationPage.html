@@ -6,18 +6,18 @@
 </head>
 <body id="body">
     <div class="container">
-        <h1>Uniform Measurement - Calibration Page</h1>
-        <p class="instructions">This is a page for calibrating body measurements for future use, to ensure accuracy - 
+        <h1>Uniform Measurement - Front View + Calibration</h1>
+        <p class="instructions">This page is for storing the front-view image, and also calibrating to ensure accuracy - 
             <br><br>
-            Please position the camera accordingly, ensure <strong>SHOULDERS</strong>, <strong>HIP</strong>, <strong>ELBOWS</strong>, <strong>HANDS</strong>, AND <strong>FEET</strong> are visible in the camera frame.
+            Please position the camera and stand accordingly, ensure <strong>SHOULDERS</strong>, <strong>HIP</strong>, <strong>ELBOWS</strong>, <strong>HANDS</strong>, AND <strong>FEET</strong> are visible in the camera frame. <strong>ENSURE YOU ARE HOLDING THE CARD ON YOUR CHEST BY THE SHORT EDGE</strong>
         </p>
         <div class="video-container">
             <video id="video" width="640" height="480" autoplay></video>
         </div>
         <div id="calibration-status" style="display: none;">
-            <h2>Physical calibration complete!</h2>
-            <button id="recalibrate" class="action-button">Re-calibrate</button>
-            <button id="continue" class="action-button">Continue</button>
+            <h2>Front View Obtained</h2>
+            <button id="retry" class="action-button">Re-calibrate</button>
+            <button id="continue" class="action-button">Submit Image</button>
         </div>
     </div>
     <script src="{{ url_for('static', filename='js/calibrationScript.js') }}"></script>

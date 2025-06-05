@@ -15,7 +15,7 @@ document.getElementById('id-entry-form').addEventListener('submit', function(eve
     })
     .then(response => {
         if (response.ok) {
-            window.location.href = `${backendURL}/video_feed`; 
+            window.location.href = `${backendURL}/`; 
         } else {
             alert('Failed to submit ID. Please try again.');
         }

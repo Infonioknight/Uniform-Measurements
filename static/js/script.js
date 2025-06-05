@@ -1,82 +1,54 @@
 const video = document.getElementById('video');
 const canvas = document.createElement('canvas');
 const context = canvas.getContext('2d');
-
-const circleCanvas = document.createElement('canvas');
-const circleContext = circleCanvas.getContext('2d');
+let frameCaptureInterval;
+let isMeasurementComplete = false;
+let lastValidFrame = null;
+const backendURL = 'http://127.0.0.1:5000';
 // const backendURL = 'https://uniform-1060926045936.asia-southeast1.run.app'
-const backendURL = 'http://127.0.0.1:5000'
 
-circleCanvas.width = 640;
-circleCanvas.height = 480;
-
-function drawCircles(circleCoords) {
-    circleContext.clearRect(0, 0, circleCanvas.width, circleCanvas.height);
-    circleContext.globalAlpha = 0.5;
-    circleContext.fillStyle = 'rgb(252, 89, 89)';
-
-    const circleRadius = 20;
-
-    for (const coord of Object.values(circleCoords)) {
-        const [x, y] = coord; 
-        circleContext.beginPath();
-        circleContext.arc(x, y, circleRadius, 0, 2 * Math.PI);
-        circleContext.fill();
-    }
-
-    circleContext.globalAlpha = 1.0;
-}
-
-function getCircleCoordinates() {
-    const coords = sessionStorage.getItem('circleCoords');
-    return coords ? JSON.parse(coords) : []; 
-}
-
-navigator.mediaDevices.getUserMedia({
-    video: true
-}).then(stream => {
-    video.srcObject = stream;
-}).catch(err => {
-    console.error('Error accessing webcam: ', err);
-    alert('Could not access the webcam. Please allow access.');
-});
+navigator.mediaDevices.getUserMedia({ video: true })
+    .then(stream => {
+        video.srcObject = stream;
+    })
+    .catch(err => {
+        console.error('Error accessing webcam: ', err);
+        alert('Could not access the webcam. Please allow access.');
+    });
 
 video.addEventListener('canplay', () => {
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-
-    video.parentNode.insertBefore(canvas, video);
-    video.style.display = 'none';
-
-    const circleCoords = getCircleCoordinates();
-    drawCircles(circleCoords);
+    console.log("Video is ready and canvas dimensions set.");
 });
 
 function captureAndSendFrame() {
+    if (isMeasurementComplete) return;
+
     if (video.readyState === video.HAVE_ENOUGH_DATA) {
-        context.clearRect(0, 0, canvas.width, canvas.height);
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        context.drawImage(circleCanvas, 0, 0);
 
-        canvas.toBlob(function(blob) {
-            if (blob) {
-                const formData = new FormData();
-                formData.append('frame', blob, 'frame.jpg');
+        canvas.toBlob(blob => {
+            if (!blob) {
+                console.error("Failed to create Blob from canvas.");
+                return;
+            }
 
-                fetch(`${backendURL}/process_frame`, {
-                    method: 'POST',
-                    body: formData
-                })
+            const formData = new FormData();
+            formData.append('frame', blob, 'frame.jpg');
+
+            fetch(`${backendURL}/measurement_page`, {
+                method: 'POST',
+                body: formData
+            })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        console.log("Frame processed successfully.");
                         document.getElementById('body').style.backgroundColor = data.background_color;
 
                         if (data.background_color === '#00ff00') {
-                            setTimeout(() => {
-                                window.location.href = '/entry_submission'; 
-                            }, 1500); 
+                            lastValidFrame = blob;
+                            completeMeasurement();
                         }
                     } else {
                         console.error("Frame processing error: ", data.error);
@@ -85,13 +57,93 @@ function captureAndSendFrame() {
                 .catch(err => {
                     console.error('Error sending frame: ', err);
                 });
-            } else {
-                console.error("Failed to create Blob from canvas.");
-            }
         }, 'image/jpeg');
     } else {
         console.log("Video frame not ready yet.");
     }
 }
 
-setInterval(captureAndSendFrame, 100);
+function completeMeasurement() {
+    isMeasurementComplete = true;
+    clearInterval(frameCaptureInterval);
+    video.pause();
+    video.srcObject.getTracks().forEach(track => track.stop());
+    document.getElementById('measurement-status').style.display = 'block';
+}
+
+function startCameraAndMeasurement() {
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+            video.srcObject = stream;
+            video.play();
+            document.getElementById('measurement-status').style.display = 'none';
+            frameCaptureInterval = setInterval(captureAndSendFrame, 100);
+        })
+        .catch(err => {
+            console.error('Error accessing webcam: ', err);
+            alert('Could not access the webcam. Please allow access.');
+        });
+}
+
+document.getElementById('retry').addEventListener('click', () => {
+    document.getElementById('body').style.backgroundColor = '#f58484';
+
+    video.pause();
+    video.srcObject.getTracks().forEach(track => track.stop());
+
+    fetch(`${backendURL}/retry`, { method: 'POST' })
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            console.log('Successfully touched /retry route');
+
+            isMeasurementComplete = false;
+            setTimeout(startCameraAndMeasurement, 1500);
+        })
+        .catch(err => {
+            console.error('Error accessing /retry route: ', err);
+        });
+});
+
+document.getElementById('continue').addEventListener('click', () => {
+    if (!lastValidFrame) {
+        alert("No valid frame available. Please recalibrate.");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('frame', lastValidFrame, 'final_frame.jpg');
+
+    fetch(`${backendURL}/process_side_view`, {
+        method: 'POST',
+        body: formData
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = `${backendURL}/entry_submission`;
+            } else {
+                alert("Validation failed. Restarting measurement...");
+
+                isMeasurementComplete = false;
+                video.pause();
+                if (video.srcObject) {
+                    video.srcObject.getTracks().forEach(track => track.stop());
+                }
+
+                fetch(`${backendURL}/retry`, { method: 'POST' })
+                    .then(() => {
+                        setTimeout(startCameraAndMeasurement, 1500);
+                    })
+                    .catch(err => {
+                        console.error('Error accessing /retry route: ', err);
+                    });
+            }
+        })
+        .catch(err => {
+            console.error('Error during side view processing: ', err);
+            alert('Error occurred. Please try again.');
+        });
+});
+
+// Start frame capture on load
+frameCaptureInterval = setInterval(captureAndSendFrame, 100);
