@@ -161,15 +161,27 @@ def get_scaling_factor(rle, mask_shape):
     ratio = round(longest / 8.6, 2)
     return ratio
 
-def calculate_height(output, target_label='person'):
-    index = output['labels'].index(target_label)
-    x1, y1, x2, y2 = output['boxes'][index]  # [x1, y1, x2, y2]
+# def calculate_height(output, target_label='person'):
+#     index = output['labels'].index(target_label)
+#     x1, y1, x2, y2 = output['boxes'][index]  # [x1, y1, x2, y2]
 
-    width = abs(x2 - x1)
-    height = abs(y2 - y1)
+#     width = abs(x2 - x1)
+#     height = abs(y2 - y1)
 
-    print('The height in pixels is: ', max(width, height))
-    return max(width, height)
+#     print('The height in pixels is: ', max(width, height))
+#     return max(width, height)
+
+def calculate_dimensions(rle, mask_shape):
+    mask = decode_rle_to_mask(rle, mask_shape)
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    if not contours:
+        return 0  # fallback in case of no contour
+
+    largest_contour = max(contours, key=cv2.contourArea)
+    x, y, w, h = cv2.boundingRect(largest_contour)
+
+    return h, w
 
 def log_to_google_sheets(data):
     try:
@@ -299,6 +311,7 @@ def final_validation():
     results = dino_bounding_box_predictor(TEXT_PROMPT, image, sam2_predictor, grounding_model, processor)
     if 'card' in results[0]['labels'] and 'person' in results[0]['labels']:
         card_index = results[0]['labels'].index('card')
+        person_index = results[0]['labels'].index('person')
 
         masks, _, _ = sam_mask_predictor(results, sam2_predictor)
 
@@ -306,7 +319,7 @@ def final_validation():
 
         session['scaling_factor'] = round(float(get_scaling_factor(output[card_index]['segmentation']['counts'], tuple(output[card_index]['segmentation']['size']))), 2)
         print(session['scaling_factor'])
-        session['true_height'] = round(float(calculate_height(results[0], 'person') / session['scaling_factor']), 2)
+        session['true_height']= round(float(calculate_dimensions(output[person_index]['segmentation']['counts'], tuple(output[person_index]['segmentation']['size']))[0] / session['scaling_factor']), 2)
         print(session['true_height'])
         calculate_measurements_front()
         
@@ -345,10 +358,10 @@ def process_side_view():
     image = Image.open(frame_file).convert("RGB")
     results = dino_bounding_box_predictor(TEXT_PROMPT, image, sam2_predictor, grounding_model, processor)
     if 'person' in results[0]['labels']:
-        bbox = results[0]['boxes'][0]
+        masks, _, _ = sam_mask_predictor(results, sam2_predictor)
 
-        width = float(bbox[2] - bbox[0])
-        height = float(bbox[3] - bbox[1])
+        output = structure_output(results, masks)
+        height, width = [float(value) for value in calculate_dimensions(output[0]['segmentation']['counts'], tuple(output[0]['segmentation']['size']))]
 
         new_scaling = height / session['true_height']
         session['person_width'] = width / new_scaling
