@@ -120,7 +120,7 @@ document.getElementById('continue').addEventListener('click', () => {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                window.location.href = `${backendURL}/side_instructions`;
+                window.location.href = `${backendURL}/verify_height`;
             } else {
                 alert("Validation failed. Restarting calibration...");
 

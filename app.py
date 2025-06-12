@@ -1,4 +1,4 @@
-from flask import Flask, Response, render_template, jsonify, request, session
+from flask import Flask, render_template, jsonify, request, session, redirect, url_for
 import cv2
 import mediapipe as mp
 import math
@@ -321,20 +321,33 @@ def final_validation():
         print(session['scaling_factor'])
         session['true_height']= round(float(calculate_dimensions(output[person_index]['segmentation']['counts'], tuple(output[person_index]['segmentation']['size']))[0] / session['scaling_factor']), 2)
         print(session['true_height'])
-        calculate_measurements_front()
-        
+
         return jsonify(success=True, message="Validation passed.")
     else:
         return jsonify(success=False, message="Card or person not detected. Restart calibration.")
+
+@app.route('/verify_height', methods=['GET', 'POST'])
+def height_verification():
+    true_height = session.get('true_height', None)
+
+    if request.method == 'POST':
+        corrected_height = request.form.get('corrected_height')
+        if corrected_height:
+            session['true_height'] = float(corrected_height)
+        return redirect(url_for('side_instruction'))
+
+    return render_template('verifyHeight.html', true_height=true_height)
+
+@app.route('/side_instructions')
+def side_instruction():
+    calculate_measurements_front()
+    print(session['true_height'])
+    return render_template('sideInstructions.html')   
 
 @app.route('/video_feed') 
 def index():
     reset_variables()
     return render_template('index.html')
-    
-@app.route('/side_instructions')
-def side_instruction():
-    return render_template('sideInstructions.html')   
     
 @app.route('/measurement_page', methods=['POST']) 
 def side_calculation():

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Verify Height</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/verifyHeight.css') }}">
+</head>
+<body>
+    <div class="modal">
+        <p>The true height measured was <strong>{{ true_height }} cm</strong>.</p>
+        <p>Is this value correct?</p>
+        <button onclick="showContinue()">YES, continue</button>
+        <button onclick="showCorrection()">NO, change</button>
+
+        <div id="correction-box" class="hidden">
+            <form method="POST">
+                <p>Ensure your height is correct. This will influence all future measurements.</p>
+                <input type="number" name="corrected_height" step="0.1" min="50" max="250" required placeholder="Enter your height in cm">
+                <button type="submit">Submit</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/verifyHeight.js') }}"></script>
+</body>
+</html>
