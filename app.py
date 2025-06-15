@@ -14,16 +14,12 @@ from PIL import Image
 from sam2.build_sam import build_sam2
 from sam2.sam2_image_predictor import SAM2ImagePredictor
 from transformers import AutoProcessor, AutoModelForZeroShotObjectDetection 
+import psycopg2
 
 ########################## CONFIG ###########################
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 CORS(app)
-
-scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-creds = ServiceAccountCredentials.from_json_keyfile_name('uniform-measurement-f711ead2e72b.json', scope)
-client = gspread.authorize(creds)
-sheet = client.open("Uniform test").sheet1 
 
 mp_pose = mp.solutions.pose
 pose = mp_pose.Pose()
@@ -161,16 +157,6 @@ def get_scaling_factor(rle, mask_shape):
     ratio = round(longest / 8.6, 2)
     return ratio
 
-# def calculate_height(output, target_label='person'):
-#     index = output['labels'].index(target_label)
-#     x1, y1, x2, y2 = output['boxes'][index]  # [x1, y1, x2, y2]
-
-#     width = abs(x2 - x1)
-#     height = abs(y2 - y1)
-
-#     print('The height in pixels is: ', max(width, height))
-#     return max(width, height)
-
 def calculate_dimensions(rle, mask_shape):
     mask = decode_rle_to_mask(rle, mask_shape)
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -183,18 +169,43 @@ def calculate_dimensions(rle, mask_shape):
 
     return h, w
 
-def log_to_google_sheets(data):
-    try:
-        sheet_values = sheet.get_all_values()
+def log_to_db(user_id, shoulder, waist, torso, leg, thigh):
+    conn = psycopg2.connect(
+        dbname="postgres",
+        user="postgres",
+        password="StickyTape",
+        host="localhost",
+        port=5432
+    )
+    cur = conn.cursor()
 
-        if len(sheet_values) == 0: 
-            sheet.append_row(["Measurements in Inches (in)"])
-            sheet.append_row(["Shoulder circumference", "Waist", "Torso height", "Leg height", "Thigh radius"])
+    # Create table if it doesn't exist
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS user_readings (
+            id TEXT PRIMARY KEY,
+            shoulder_distance REAL,
+            waist REAL,
+            torso_height REAL,
+            leg_height REAL,
+            thigh_radius REAL
+        );
+    """)
 
-        sheet.append_row(data)
+    # Insert or update
+    cur.execute("""
+        INSERT INTO user_readings (id, shoulder_distance, waist, torso_height, leg_height, thigh_radius)
+        VALUES (%s, %s, %s, %s, %s, %s)
+        ON CONFLICT (id) DO UPDATE SET
+            shoulder_distance = EXCLUDED.shoulder_distance,
+            waist = EXCLUDED.waist,
+            torso_height = EXCLUDED.torso_height,
+            leg_height = EXCLUDED.leg_height,
+            thigh_radius = EXCLUDED.thigh_radius;
+    """, (user_id, shoulder, waist, torso, leg, thigh))
 
-    except Exception as e:
-        print(f"Error logging data to Google Sheet: {e}")
+    conn.commit()
+    cur.close()
+    conn.close()
 
 def check_landmarks_visibility(landmarks, mode):
     global all_visible_once_logged, visible_counter, background_color
@@ -393,8 +404,14 @@ def reading_submission():
     data = request.json
     user_id = data.get('id')
 
-    log_to_google_sheets([user_id, session['shoulder_distance'] / 2.5, session['waist'] / 2.5, session['torso_height'] / 2.5, session['leg_height'] / 2.5, session['thigh_radius'] / 2.5])
-    return jsonify({"success": True}), 200
+    shoulder = session['shoulder_distance'] / 2.5
+    waist = session['waist'] / 2.5
+    torso = session['torso_height'] / 2.5
+    leg = session['leg_height'] / 2.5
+    thigh = session['thigh_radius'] / 2.5
+
+    # Log to PostgreSQL
+    log_to_db(user_id, shoulder, waist, torso, leg, thigh)
 
 if __name__ == '__main__':
     app.run(debug=True, threaded=True)
