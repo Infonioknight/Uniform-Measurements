@@ -1,0 +1,63 @@
+.card{
+    background-color:#f8fafa;
+    /* height: 250px; */
+    padding: 1rem;
+    /* width: 630pc; */
+    width: auto;
+    border-radius: 2rem;
+    box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.2),
+               0px 2px 4px rgba(0,0,0,0.2),
+               0px 4px 8px rgba(0,0,0,0.2),
+               0px 8px 16px rgba(0,0,0,0.2)
+}
+
+.form-control:focus {
+    box-shadow: none;
+    border-color: #BA68C8
+}
+
+.profile-button {
+    background: rgb(99, 39, 120);
+    box-shadow: none;
+    border: none
+}
+
+.profile-button:hover {
+    background: #682773
+}
+
+.profile-button:focus {
+    background: #682773;
+    box-shadow: none
+}
+
+.profile-button:active {
+    background: #682773;
+    box-shadow: none
+}
+
+.back:hover {
+    color: #682773;
+    cursor: pointer
+}
+input form-control{
+    margin-left: 15px;
+    width: 95%;
+    border-radius: 0.5rem;
+}
+
+.labels {
+    margin: 4px;
+}
+
+
+.add-experience:hover {
+    background: #BA68C8;
+    color: #fff;
+    cursor: pointer;
+    border: solid 1px #BA68C8
+}
+
+tr{
+    height: 60px;
+} 

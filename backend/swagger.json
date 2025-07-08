@@ -1,0 +1,56 @@
+{ "swagger": "2.0",
+    "info": {
+        "version": "1.0.0",
+        "description": "API for E-commerce application",
+        "title": "E-commerce API"
+    },
+    "host": "localhost:3001",
+    "securityDefinitions": {
+        "JWT": {
+            "in": "header",
+            "name": "Authorization",
+            "type": "apiKey"
+        }
+    },
+    "paths": {
+        "/users": {
+            "post": {
+                "tags": ["Users"],
+                "summary": "Login",
+                "description": "User login to get token",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "User Credentials",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "name":{
+                                    "type":"string"
+                                },
+                                "email": {
+                                    "type": "string"
+                                },
+                                "password": {
+                                    "type": "string"
+                                },
+                                "confirm_password" : {
+                                    "type":"string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Incorrect Credentials"
+                    }
+                }
+            }
+        }
+    }
+}
