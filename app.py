@@ -6,7 +6,7 @@ import os
 import numpy as np
 from flask_cors import CORS
 import gspread
-from oauth2client.service_account import ServiceAccountCredentials
+# from oauth2client.service_account import ServiceAccountCredentials
 import torch
 import pycocotools.mask as mask_util
 from pathlib import Path
@@ -14,16 +14,53 @@ from PIL import Image
 from sam2.build_sam import build_sam2
 from sam2.sam2_image_predictor import SAM2ImagePredictor
 from transformers import AutoProcessor, AutoModelForZeroShotObjectDetection 
+from google.cloud import secretmanager
+from google.oauth2 import service_account # Used for creating credentials object
+# import gspread # Your gspread library
+import json
 
 ########################## CONFIG ###########################
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 CORS(app)
 
-scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-creds = ServiceAccountCredentials.from_json_keyfile_name('uniform-measurement-f711ead2e72b.json', scope)
-client = gspread.authorize(creds)
-sheet = client.open("Uniform test").sheet1 
+SHEETS_SECRET_NAME = os.environ.get('SHEETS_SECRET_NAME')
+# scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+# creds = ServiceAccountCredentials.from_json_keyfile_name('uniform-measurement-f711ead2e72b.json', scope)
+# client = gspread.authorize(creds)
+# sheet = client.open("Uniform test").sheet1 
+sheet = None
+
+if SHEETS_SECRET_NAME:
+    try:
+        secret_client = secretmanager.SecretManagerServiceClient()
+        response = secret_client.access_secret_version(request={"name": SHEETS_SECRET_NAME})
+        secret_payload = response.payload.data.decode("UTF-8")
+        credentials_info = json.loads(secret_payload) # Parse the JSON string into a Python dict
+
+        # Define the scopes (can be broader or narrower based on your needs)
+        # You might only need 'https://www.googleapis.com/auth/spreadsheets'
+        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive", "https://www.googleapis.com/auth/spreadsheets"]
+
+        # Create credentials object from the info obtained from Secret Manager
+        creds = service_account.Credentials.from_service_account_info(
+            credentials_info, scopes=scope
+        )
+
+        # Authorize gspread with the new credentials object
+        gspread_client = gspread.authorize(creds)
+        sheet = gspread_client.open("Uniform test").sheet1
+        print("Google Sheets API client and sheet loaded successfully.")
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        print(f"Error initializing Google Sheets API client: {e}")
+        sheet = None # Set to None if initialization failed
+        # Optionally re-raise if Sheets API is critical for your app: raise e
+else:
+    print("SHEETS_SECRET_NAME environment variable not set. Google Sheets API not initialized.")
+
 
 mp_pose = mp.solutions.pose
 pose = mp_pose.Pose()
@@ -63,8 +100,8 @@ all_visible_once_logged = False
 
 GROUNDING_MODEL = "IDEA-Research/grounding-dino-tiny"
 TEXT_PROMPT = "card . person."
-SAM2_CHECKPOINT = "./checkpoints/sam2.1_hiera_large.pt"
-SAM2_MODEL_CONFIG = "configs/sam2.1/sam2.1_hiera_l.yaml"
+SAM2_CHECKPOINT = "sam2.1_hiera_base_plus.pt"
+SAM2_MODEL_CONFIG = "configs/sam2.1/sam2.1_hiera_b+.yaml"
 DEVICE = "cpu"
 
 # build SAM2 image predictor
@@ -184,6 +221,7 @@ def calculate_dimensions(rle, mask_shape):
     return h, w
 
 def log_to_google_sheets(data):
+    global sheet
     try:
         sheet_values = sheet.get_all_values()
 
@@ -397,4 +435,4 @@ def reading_submission():
     return jsonify({"success": True}), 200
 
 if __name__ == '__main__':
-    app.run(debug=True, threaded=True)
+    app.run(debug=False, threaded=True)
