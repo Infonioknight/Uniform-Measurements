@@ -1,5 +1,6 @@
 # Uniform Measurement App
 
+### NOTE: THE IMPLEMENTATION HAS CHANGED SIGNIFICANTLY SINCE THIS README WAS MADE, FEW THINGS MIGHT NOT WORK/FUNCTION DIFFERENTLY
 ## Overview:
 The goal of this project is to streamline and automate the process of getting the measurements of a person for the purpose of tailoring uniforms.
 
